@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using LahanShop.Data;   // Підключаємо папку з базою даних
-using LahanShop.Models; // Підключаємо папку з моделями
+using LahanShop.Data;   
+using LahanShop.Models; 
+using LahanShop.DTOs;
 
 namespace LahanShop.Controllers
 {
@@ -18,42 +19,81 @@ namespace LahanShop.Controllers
             _context = context;
         }
 
-        // 1. GET: api/products (Отримати всі товари)
+        // GET: api/products
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
+        public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts()
         {
-            // async/await використовується, щоб сервер не зависав, поки база шукає дані
-            return await _context.Products.ToListAsync();
+            // МИ НЕ ПОВЕРТАЄМО Products! Ми перетворюємо їх на ProductDto "на льоту".
+            // Метод .Select() — це як конвеєр: бере Product, а видає ProductDto
+            return await _context.Products
+                .Select(p => new ProductDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Price = p.Price,
+                    Description = p.Description,
+                    Category = p.Category
+                })
+                .ToListAsync();
         }
 
-        // 2. GET: api/products/5 (Отримати один товар за ID)
+        // GET: api/products/id
         [HttpGet("{id}")]
-        public async Task<ActionResult<Product>> GetProduct(int id)
+        public async Task<ActionResult<ProductDto>> GetProduct(int id)
         {
             var product = await _context.Products.FindAsync(id);
 
             if (product == null)
             {
-                return NotFound(); // Повертає код 404
+                return NotFound();
             }
 
-            return product; // Повертає код 200 і товар
+            // Ручний мапінг одного об'єкта
+            var productDto = new ProductDto
+            {
+                Id = product.Id,
+                Name = product.Name,
+                Price = product.Price,
+                Description = product.Description,
+                Category = product.Category
+            };
+
+            return productDto;
         }
 
-        // 3. POST: api/products (Створити новий товар)
+        // POST: api/products
+        // Увага: Приймаємо CreateProductDto, а не Product!
         [HttpPost]
-        public async Task<ActionResult<Product>> PostProduct(Product product)
+        public async Task<ActionResult<ProductDto>> PostProduct(CreateProductDto createDto)
         {
-            // Додаємо в пам'ять
+            // 1. Створюємо сутність для бази даних з DTO
+            var product = new Product
+            {
+                Name = createDto.Name,
+                Price = createDto.Price,
+                Description = createDto.Description,
+                Category = createDto.Category
+                // Id ми не чіпаємо! База створить його сама. Це безпечно.
+            };
+
+            // 2. Зберігаємо в базу
             _context.Products.Add(product);
-            // Зберігаємо в базу (фізично)
             await _context.SaveChangesAsync();
 
-            // Повертає код 201 Created і посилання на створений товар
-            return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
+            // 3. Формуємо відповідь (Dto з новим ID)
+            var resultDto = new ProductDto
+            {
+                Id = product.Id, // Тут Id вже з'явився після збереження
+                Name = product.Name,
+                Price = product.Price,
+                Description = product.Description,
+                Category = product.Category
+            };
+
+            return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, resultDto);
         }
 
-        // 4. DELETE: api/products/5 (Видалити товар)
+        // DELETE: api/products/id
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
@@ -66,7 +106,7 @@ namespace LahanShop.Controllers
             _context.Products.Remove(product);
             await _context.SaveChangesAsync();
 
-            return NoContent(); // Повертає код 204 (Успіх, але вмісту немає)
+            return NoContent();
         }
     }
 }

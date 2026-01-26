@@ -14,12 +14,11 @@ namespace LahanShop.DTOs
 
         [Required]
         public string CustomerAddress { get; set; } = string.Empty;
-
-        // Список товарів (тільки ID і кількість)
+                
         public List<CartItemDto> Items { get; set; } = new List<CartItemDto>();
     }
 
-    // Маленька коробка для рядочка в замовленні
+    
     public class CartItemDto
     {
         public int ProductId { get; set; }

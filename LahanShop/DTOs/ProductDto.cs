@@ -6,8 +6,8 @@
         public string Name { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public string Description { get; set; } = string.Empty;
-        public string Category { get; set; } = string.Empty;
-
-        // Тут немає жодних анотацій бази даних, це чистий клас!
+        
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
     }
 }

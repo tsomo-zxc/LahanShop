@@ -6,30 +6,40 @@ namespace LahanShop.Data
     {
         public static void Initialize(AppDbContext context)
         {
-            // Переконуємось, що база створена
             context.Database.EnsureCreated();
 
-            // Перевірка: якщо є хоч один товар, то нічого не робимо
-            if (context.Products.Any())
-            {
-                return;   // База вже заповнена
-            }
+            if (context.Categories.Any()) return; // Якщо категорії є — виходимо
 
-            // Якщо товарів немає, створюємо масив
+            // 1. Створюємо Головні категорії
+            var electronics = new Category { Name = "Електроніка" };
+            var clothes = new Category { Name = "Одяг" };
+
+            context.Categories.AddRange(electronics, clothes);
+            context.SaveChanges(); // Зберігаємо, щоб отримати ID
+
+            // 2. Створюємо Підкатегорії (для Електроніки)
+            var laptops = new Category { Name = "Ноутбуки", Parent = electronics };
+            var phones = new Category { Name = "Смартфони", Parent = electronics };
+
+            context.Categories.AddRange(laptops, phones);
+            context.SaveChanges();
+
+            // 3. Створюємо Під-підкатегорії (для Ноутбуків)
+            var asusLaptops = new Category { Name = "Ноутбуки Asus", Parent = laptops };
+            var appleLaptops = new Category { Name = "MacBook", Parent = laptops };
+
+            context.Categories.AddRange(asusLaptops, appleLaptops);
+            context.SaveChanges();
+
+            // 4. Додаємо товари вже в конкретні кінцеві категорії
             var products = new Product[]
             {
-                new Product { Name = "Ігровий Ноутбук Titan", Category = "Електроніка", Price = 45000, Description = "Потужний ноутбук для сучасних ігор" },
-                new Product { Name = "Смартфон Galaxy S99", Category = "Електроніка", Price = 32000, Description = "Флагман з неймовірною камерою" },
-                new Product { Name = "Навушники ProSound", Category = "Аксесуари", Price = 3500, Description = "Шумопоглинання та чіткий бас" },
-                new Product { Name = "Рюкзак Urban", Category = "Одяг", Price = 1200, Description = "Стильний рюкзак для міста" },
-                new Product { Name = "Механічна клавіатура RGB", Category = "Електроніка", Price = 4200, Description = "Червоні світчі, тихий хід" },
-                new Product { Name = "Кавоварка SmartLife", Category = "Побут", Price = 8900, Description = "Керування зі смартфона" }
+                new Product { Name = "Asus TUF Gaming", Price = 45000, Category = asusLaptops }, // Вкладеність 3 рівня!
+                new Product { Name = "iPhone 15", Price = 32000, Category = phones },           // Вкладеність 2 рівня
+                new Product { Name = "Футболка White", Price = 500, Category = clothes }        // Вкладеність 1 рівня
             };
 
-            // Додаємо їх у контекст
             context.Products.AddRange(products);
-
-            // Зберігаємо зміни в базу
             context.SaveChanges();
         }
     }

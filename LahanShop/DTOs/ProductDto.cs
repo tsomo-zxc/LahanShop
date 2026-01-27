@@ -12,6 +12,6 @@
 
         public string? Specifications { get; set; }
 
-        public List<string> ImageUrls { get; set; } = new List<string>();
+        public List<ProductImageDto> ImageUrls { get; set; } = new List<ProductImageDto>();
     }
 }

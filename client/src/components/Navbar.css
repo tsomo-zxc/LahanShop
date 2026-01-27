@@ -39,3 +39,26 @@
 .nav-link:hover {
     opacity: 1;
 }
+.nav-cart-btn {
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.cart-badge {
+    background-color: #ef4444; /* Червоний */
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    font-weight: bold;
+    position: absolute;
+    top: -8px;
+    right: -10px;
+}

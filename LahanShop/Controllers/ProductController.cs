@@ -24,9 +24,7 @@ namespace LahanShop.Controllers
         // GET: api/products
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts()
-        {
-            // МИ НЕ ПОВЕРТАЄМО Products! Ми перетворюємо їх на ProductDto "на льоту".
-            // Метод .Select() — це як конвеєр: бере Product, а видає ProductDto
+        {           
             return await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Images)
@@ -39,7 +37,11 @@ namespace LahanShop.Controllers
                     CategoryId = p.CategoryId,
                     CategoryName = p.Category.Name,
                     Specifications = p.Specifications,
-                    ImageUrls = p.Images.Select(img => img.Url).ToList()
+                    ImageUrls = p.Images.Select(img => new ProductImageDto
+                    {
+                        Id = img.Id,
+                        Url = img.Url
+                    }).ToList()
                 })
                 .ToListAsync();
 
@@ -71,7 +73,11 @@ namespace LahanShop.Controllers
                 CategoryId = product.CategoryId,                
                 CategoryName = product.Category?.Name ?? "Без категорії",                
                 Specifications = product.Specifications,
-                ImageUrls = product.Images.Select(img => img.Url).ToList()
+                ImageUrls = product.Images.Select(img => new ProductImageDto
+                {
+                    Id = img.Id,
+                    Url = img.Url
+                }).ToList()
             };
 
             return productDto;
@@ -138,13 +144,17 @@ namespace LahanShop.Controllers
                 Name = product.Name,
                 CategoryId = product.CategoryId,
                 CategoryName = category.Name,
-                ImageUrls = product.Images.Select(i => i.Url).ToList()
+                ImageUrls = product.Images.Select(img => new ProductImageDto
+                {
+                    Id = img.Id,
+                    Url = img.Url
+                }).ToList()
             };
 
             return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, resultDto);
         }
 
-        // 4. DELETE: api/products/5
+        // DELETE: api/products/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
@@ -158,6 +168,78 @@ namespace LahanShop.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        // PUT: api/products/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateProduct(int id, [FromForm] CreateProductDto dto)
+        {
+            // 1. Шукаємо товар разом з картинками
+            var product = await _context.Products
+                .Include(p => p.Images)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (product == null) return NotFound("Товар не знайдено");
+
+            // 2. Перевіряємо нову категорію (якщо вона змінилась)
+            var category = await _context.Categories.FindAsync(dto.CategoryId);
+            if (category == null) return BadRequest("Такої категорії не існує");
+
+            // 3. Оновлюємо базові поля
+            product.Name = dto.Name;
+            product.Price = dto.Price;
+            product.Description = dto.Description;
+            product.CategoryId = dto.CategoryId;
+            product.Specifications = dto.Specifications; // Оновлюємо JSON
+
+            // 4. Обробка НОВИХ картинок (додавання до існуючих)
+            if (dto.Images != null && dto.Images.Count > 0)
+            {
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "images");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                foreach (var file in dto.Images)
+                {
+                    if (file.Length > 0)
+                    {
+                        var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                        var filePath = Path.Combine(uploadsFolder, fileName);
+
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await file.CopyToAsync(stream);
+                        }
+
+                        // Додаємо в колекцію
+                        product.Images.Add(new ProductImage { Url = $"/images/{fileName}" });
+                    }
+                }
+            }
+
+            // 5. Зберігаємо зміни
+            await _context.SaveChangesAsync();
+
+            return Ok(new { Message = "Товар оновлено успішно!" });
+        }
+
+        [HttpDelete("images/{imageId}")]
+        public async Task<IActionResult> DeleteProductImage(int imageId)
+        {
+            var image = await _context.ProductImages.FindAsync(imageId);
+            if (image == null) return NotFound("Картинку не знайдено");
+
+            // 1. Видаляємо файл з диска (опціонально, але бажано для економії місця)
+            var filePath = Path.Combine(_env.WebRootPath, image.Url.TrimStart('/'));
+            if (System.IO.File.Exists(filePath))
+            {
+                System.IO.File.Delete(filePath);
+            }
+
+            // 2. Видаляємо запис з бази
+            _context.ProductImages.Remove(image);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { Message = "Фото видалено" });
         }
     }
 }

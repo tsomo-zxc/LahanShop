@@ -1,14 +1,26 @@
-import './Navbar.css'; 
+import { Link } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
+import './Navbar.css';
+
 const Navbar = () => {
+  const { cart, toggleCart } = useCart();
+  
+  // Рахуємо загальну кількість товарів (штук)
+  const itemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        <h2 className="navbar-logo">LahanShop 🚀</h2>
+        <Link to="/" className="navbar-logo" style={{textDecoration: 'none', color: 'white'}}>
+           NovaShop 🚀
+        </Link>
         
         <div className="navbar-links">
-          <span className="nav-link">Головна</span>
-          <span className="nav-link">Каталог</span>
-          <span className="nav-link">Про нас</span>
+          {/* Кнопка Кошика */}
+          <div className="nav-cart-btn" onClick={() => toggleCart(true)}>
+            🛒 Кошик
+            {itemsCount > 0 && <span className="cart-badge">{itemsCount}</span>}
+          </div>
         </div>
       </div>
     </nav>

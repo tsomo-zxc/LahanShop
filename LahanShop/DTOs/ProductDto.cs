@@ -9,5 +9,9 @@
         
         public int CategoryId { get; set; }
         public string CategoryName { get; set; } = string.Empty;
+
+        public string? Specifications { get; set; }
+
+        public List<string> ImageUrls { get; set; } = new List<string>();
     }
 }

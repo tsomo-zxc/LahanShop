@@ -7,10 +7,10 @@ export interface Product {
   id: number;
   name: string;
   price: number;
-  categoryName: string;
   description: string;
-  // Нові поля:
-  specifications?: string; // Приходить як JSON-рядок
+  categoryName: string;
+  /** JSON string representing specifications */
+  specifications: string | null;
   images: ProductImage[];
 }
 
@@ -18,4 +18,17 @@ export interface CartItem extends Product {
   quantity: number;
 }
 
-export const API_BASE_URL = "https://localhost:5001";
+export interface ApiResponse<T> {
+  data: T;
+  success: boolean;
+  message?: string;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  parentId: number | null;
+  productsCount: number;
+  // Це поле ми заповнимо самі на фронтенді
+  children?: Category[]; 
+}

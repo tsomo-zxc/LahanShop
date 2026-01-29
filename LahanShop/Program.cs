@@ -17,7 +17,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactApp", policyBuilder =>
     {
-        policyBuilder.WithOrigins("http://localhost:5173") // Адреса майбутнього React-додатка
+        policyBuilder.WithOrigins("http://localhost:3000","http://localhost:5173") // Адреса майбутнього React-додатка
                      .AllowAnyHeader()
                      .AllowAnyMethod();
     });
@@ -39,6 +39,9 @@ app.UseHttpsRedirection();
 
 app.UseCors("ReactApp");
 app.UseStaticFiles();
+app.UseRouting();
+
+app.UseCors("AllowReactApp");
 app.UseAuthorization();
 
 app.MapControllers();

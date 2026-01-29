@@ -1,81 +1,70 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { Link } from 'react-router-dom';
-
-// Імпорти компонентів
-import Navbar from '../components/Navbar'; 
-import '../App.css';
-
-// Імпорти типів та констант
+import React, { useEffect, useState } from 'react';
 import type { Product } from '../types';
-import { API_BASE_URL } from '../types'; // Переконайтеся, що додали це в types.ts
-// Якщо ще не додали змінну, замініть на 'https://localhost:5001'
+import { productService } from '../services/api';
+import ProductCard from '../components/ProductCard';
 
-// Імпорт хука кошика
-import { useCart } from '../context/CartContext';
-
-function Home() {
+const Home: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  
-  // Беремо функцію додавання з нашого "глобального мозку"
-  const { addToCart } = useCart();
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    axios.get(`${API_BASE_URL}/api/products`)
-      .then(response => setProducts(response.data))
-      .catch(error => console.error("Error loading products:", error));
+    const fetchProducts = async () => {
+      try {
+        const data = await productService.getAll();
+        setProducts(data);
+      } catch (err) {
+        console.error(err);
+        setError('Не вдалося завантажити товари. Спробуйте пізніше.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
   }, []);
 
-  return (
-    <div className="app-container">
-      <Navbar />
-
-      <div className="main-layout">
-        
-        {/* Тепер тут тільки сітка товарів на всю ширину */}
-        <div className="products-section" style={{ flex: 'none', width: '100%' }}>
-          <h1>Каталог товарів</h1>
-          
-          <div className="products-grid">
-            {products.map(product => (
-              <div key={product.id} className="product-card">
-                
-                {/* Клікабельне зображення */}
-                <Link to={`/product/${product.id}`} style={{textDecoration: 'none', color: 'inherit'}}>
-                    <div style={{height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px'}}>
-                        <img 
-                            src={product.images && product.images.length > 0 
-                                ? `${API_BASE_URL}${product.images[0].url}` 
-                                : 'https://via.placeholder.com/200?text=No+Image'} 
-                            alt={product.name}
-                            style={{maxWidth: '100%', maxHeight: '100%', objectFit: 'contain'}} 
-                        />
-                    </div>
-                    <h3>{product.name}</h3>
-                </Link>
-
-                <div>
-                  <span className="product-category">
-                    {product.categoryName || "Без категорії"}
-                  </span>
-                </div>
-                
-                <div>
-                  <div className="product-price">{product.price} ₴</div>
-                  
-                  {/* Кнопка тепер використовує глобальний контекст */}
-                  <button className="btn-add" onClick={() => addToCart(product)}>
-                    Додати в кошик
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-20">
+        <h2 className="text-2xl font-bold text-red-600 mb-2">Помилка</h2>
+        <p className="text-gray-600">{error}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8 pt-16">
+      <div className="text-center max-w-2xl mx-auto mb-12">
+        <h1 className="text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">
+          Нові надходження
+        </h1>      
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {products.map((product) => (
+          
+          <div key={product.id} className="flex justify-center sm:justify-start">
+             <ProductCard product={product} />
+          </div>
+        ))}
+      </div>
+      
+      {products.length === 0 && (
+        <div className="text-center py-20 text-gray-500">
+          Товари не знайдені.
+        </div>
+      )}
     </div>
-  )
-}
+  );
+};
 
 export default Home;

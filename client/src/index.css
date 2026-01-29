@@ -1,39 +1,10 @@
-/* src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* 1. Глобальне налаштування "коробки" */
-/* Це дозволяє padding не розширювати ширину блоків. Мастхев для верстки. */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
+/* Більше тут нічого не треба! 
+   Tailwind сам скине відступи та налаштує шрифти. */
 
-/* 2. Скидання стандартних відступів браузера */
 body {
-  margin: 0;
-  padding: 0;
-  /* Задаємо шрифт один раз для всього сайту */
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  -webkit-font-smoothing: antialiased; /* Робить шрифт чіткішим на Mac */
-  -moz-osx-font-smoothing: grayscale;
-  
-  background-color: #f4f4f4; /* Колір фону всього сайту */
-  color: #333; /* Базовий колір тексту */
-}
-
-/* 3. Налаштування посилань (щоб не були синіми і підкресленими) */
-a {
-  text-decoration: none;
-  color: inherit;
-}
-
-/* 4. Налаштування списків (прибираємо крапки) */
-ul, ol {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-/* 5. Картинки адаптивні за замовчуванням */
-img {
-  max-width: 100%;
-  display: block;
+  background-color: #f9fafb; /* Світло-сірий фон для краси (optional) */
 }

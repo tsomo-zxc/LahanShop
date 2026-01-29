@@ -1,6 +1,7 @@
 ﻿using LahanShop.Data;
 using LahanShop.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LahanShop.Controllers
 {
@@ -35,6 +36,28 @@ namespace LahanShop.Controllers
             }
 
             return Ok(new { Message = "Категорію оновлено" });
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories()
+        {
+            var categories = await _context.Categories
+                .Include(c => c.Products)  
+                .Include(c => c.Parent)    
+                .ToListAsync();
+
+            var categoryDtos = categories.Select(c => new CategoryDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                ProductsCount = c.Products != null ? c.Products.Count : 0,
+
+                
+                ParentId = c.ParentId,
+                ParentName = c.Parent?.Name 
+            }).ToList();
+
+            return Ok(categoryDtos);
         }
     }
 }

@@ -37,7 +37,7 @@ namespace LahanShop.Controllers
                     CategoryId = p.CategoryId,
                     CategoryName = p.Category.Name,
                     Specifications = p.Specifications,
-                    ImageUrls = p.Images.Select(img => new ProductImageDto
+                    Images = p.Images.Select(img => new ProductImageDto
                     {
                         Id = img.Id,
                         Url = img.Url
@@ -73,7 +73,7 @@ namespace LahanShop.Controllers
                 CategoryId = product.CategoryId,                
                 CategoryName = product.Category?.Name ?? "Без категорії",                
                 Specifications = product.Specifications,
-                ImageUrls = product.Images.Select(img => new ProductImageDto
+                Images = product.Images.Select(img => new ProductImageDto
                 {
                     Id = img.Id,
                     Url = img.Url
@@ -81,6 +81,35 @@ namespace LahanShop.Controllers
             };
 
             return productDto;
+        }
+
+        // GET: api/products/category/5
+        [HttpGet("category/{categoryId}")]
+        public async Task<ActionResult<IEnumerable<ProductDto>>> GetProductsByCategory(int categoryId)
+        {
+            // Шукаємо товари, де CategoryId співпадає з переданим
+            // АБО (якщо хочете показувати товари з підкатегорій) можна ускладнити логіку
+            var products = await _context.Products
+                .Include(p => p.Category) // Підтягуємо категорію, щоб знати її назву
+                .Where(p => p.CategoryId == categoryId)
+                .ToListAsync();
+
+            // Перетворюємо в DTO
+            var productDtos = products.Select(p => new ProductDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                Price = p.Price,
+                CategoryName = p.Category?.Name, // Назва категорії
+                Images = p.Images.Select(i => new ProductImageDto
+                {
+                    Id = i.Id,
+                    Url = i.Url
+                }).ToList()
+            }).ToList();
+
+            return Ok(productDtos);
         }
 
         // POST: api/products
@@ -144,7 +173,7 @@ namespace LahanShop.Controllers
                 Name = product.Name,
                 CategoryId = product.CategoryId,
                 CategoryName = category.Name,
-                ImageUrls = product.Images.Select(img => new ProductImageDto
+                Images = product.Images.Select(img => new ProductImageDto
                 {
                     Id = img.Id,
                     Url = img.Url

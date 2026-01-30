@@ -1,10 +1,50 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import type { Category } from '../types'; // Або пропишіть інтерфейс тут
-import {  API_BASE_URL } from '../constants';
-import { FaBars, FaChevronRight } from 'react-icons/fa'; // Іконки меню та стрілочки
+import type { Category } from '../types';
+import { FaBars, FaChevronRight } from 'react-icons/fa';
+import { API_BASE_URL } from '../constants';
 
+// --- РЕКУРСИВНИЙ КОМПОНЕНТ ---
+const CategoryItem = ({ category }: { category: Category }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const hasChildren = category.children && category.children.length > 0;
+
+  return (
+    <div 
+      className="relative"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Посилання */}
+      <Link
+        to={`/category/${category.id}`}
+        className={`flex items-center justify-between px-5 py-3 text-base transition first:rounded-t-lg last:rounded-b-lg
+          ${isHovered ? 'bg-blue-50 text-blue-600' : 'text-gray-700'}`}
+      >
+        <span className="font-medium">{category.name}</span>
+        
+        {/* Тільки стрілочка, якщо є підкатегорії (без цифр) */}
+        {hasChildren && (
+            <FaChevronRight size={12} className="text-gray-400" />
+        )}
+      </Link>
+
+      {/* ВИПАДАЮЧИЙ СПИСОК (без змін) */}
+      {hasChildren && isHovered && (
+        <div className="absolute left-full top-0 w-64 -ml-1 pl-1 z-50">
+          <div className="bg-white shadow-xl rounded-lg border border-gray-100 py-2">
+            {category.children!.map((child) => (
+              <CategoryItem key={child.id} category={child} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- ГОЛОВНИЙ КОМПОНЕНТ ---
 const CategoryDropdown = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -13,14 +53,11 @@ const CategoryDropdown = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/categories`); // Ваш URL
-        const flatCategories = response.data;
-        
-        // --- МАГІЯ: Перетворюємо плаский список у Дерево ---
-        const tree = buildCategoryTree(flatCategories);
+        const response = await axios.get(`${API_BASE_URL}/api/categories`);
+        const tree = buildCategoryTree(response.data);
         setCategories(tree);
       } catch (error) {
-        console.error("Не вдалося завантажити категорії", error);
+        console.error("Помилка:", error);
       } finally {
         setLoading(false);
       }
@@ -29,89 +66,40 @@ const CategoryDropdown = () => {
     fetchCategories();
   }, []);
 
-  // Функція, яка збирає пазл (Батьки + Діти)
   const buildCategoryTree = (items: Category[]) => {
     const map = new Map<number, Category>();
     const roots: Category[] = [];
-
-    // 1. Створюємо мапу всіх категорій і додаємо їм порожній масив дітей
-    items.forEach(item => {
-      map.set(item.id, { ...item, children: [] });
-    });
-
-    // 2. Розкладаємо по поличках
+    items.forEach(item => map.set(item.id, { ...item, children: [] }));
     items.forEach(item => {
       const node = map.get(item.id);
       if (item.parentId) {
-        // Якщо є батько -> додаємо до батька в children
-        const parent = map.get(item.parentId);
-        if (parent && node) {
-          parent.children?.push(node);
-        }
+        map.get(item.parentId)?.children?.push(node!);
       } else {
-        // Якщо батька немає -> це головна категорія (Корінь)
         if (node) roots.push(node);
       }
     });
-
     return roots;
   };
 
   return (
-    <div className="relative group pb-2" 
+    <div className="relative pb-2" 
          onMouseEnter={() => setIsOpen(true)} 
          onMouseLeave={() => setIsOpen(false)}>
       
-      {/* КНОПКА "КАТАЛОГ" */}
-      <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg  font-medium hover:bg-blue-700 transition">
+      <button className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg text-lg font-medium hover:bg-blue-700 transition shadow-md">
         <FaBars />
         <span>Каталог</span>
       </button>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%-5px)] left-0 w-64 bg-white shadow-xl rounded-lg border border-gray-100 py-2 mt-1 z-50">
-                   
+        <div className="absolute top-[calc(100%-5px)] left-0 w-72 bg-white shadow-2xl rounded-lg border border-gray-100 py-3 z-50">
           {loading ? (
-            <div className="px-4 py-3 text-sm text-gray-500 flex items-center justify-center">
-              {/* Можна додати спінер, але поки просто текст */}
-              <span>Завантаження...</span>
-            </div>
+            <div className="px-5 py-4 text-gray-500 text-center">Завантаження...</div>
           ) : (
-            
-                       <>
-              {categories.length === 0 ? (
-                <div className="px-4 py-2 text-sm text-gray-500">Категорій немає</div>
-              ) : (
-                categories.map((category) => (
-                  <div key={category.id} className="group/item relative">
-                    <Link 
-                      to={`/category/${category.id}`}
-                      className="flex items-center justify-between px-4 py-3 text-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition"
-                    >
-                      <span>{category.name}</span>
-                      {category.children && category.children.length > 0 && (
-                        <FaChevronRight size={12} className="text-gray-400" />
-                      )}
-                    </Link>
-
-                    {/* Підкатегорії */}
-                    {category.children && category.children.length > 0 && (
-                      <div className="absolute left-full top-0 w-56 bg-white shadow-xl rounded-lg border border-gray-100 py-2 hidden group-hover/item:block -ml-1 pl-4">
-                        {category.children.map((child) => (
-                          <Link
-                            key={child.id}
-                            to={`/category/${child.id}`}
-                            className="block px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600"
-                          >
-                            {child.name}
-                            <span className="text-xs text-gray-400 ml-1">({child.productsCount})</span>
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
+            <>
+              {categories.map((category) => (
+                <CategoryItem key={category.id} category={category} />
+              ))}
             </>
           )}
         </div>

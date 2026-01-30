@@ -83,37 +83,7 @@ namespace LahanShop.Controllers
             };
 
             return productDto;
-        }
-
-        // GET: api/products/category/5
-        [HttpGet("category/{categoryId}")]
-        public async Task<ActionResult<IEnumerable<ProductDto>>> GetProductsByCategory(int categoryId)
-        {
-            // Шукаємо товари, де CategoryId співпадає з переданим
-            // АБО (якщо хочете показувати товари з підкатегорій) можна ускладнити логіку
-            var products = await _context.Products
-                .Include(p => p.Category) // Підтягуємо категорію, щоб знати її назву
-                .Where(p => p.CategoryId == categoryId)
-                .ToListAsync();
-
-            // Перетворюємо в DTO
-            var productDtos = products.Select(p => new ProductDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Description = p.Description,
-                Price = p.Price,
-                CategoryName = p.Category?.Name, // Назва категорії
-                StockQuantity = p.StockQuantity,
-                Images = p.Images.Select(i => new ProductImageDto
-                {
-                    Id = i.Id,
-                    Url = i.Url
-                }).ToList()
-            }).ToList();
-
-            return Ok(productDtos);
-        }
+        }        
 
         // POST: api/products
         [HttpPost]
@@ -274,6 +244,78 @@ namespace LahanShop.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { Message = "Фото видалено" });
+        }
+
+        [HttpGet("category/{categoryId}")]
+        public async Task<ActionResult<PagedResult<ProductDto>>> GetProductsByCategory(
+            int categoryId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 24)
+        {
+            // --- КРОК 1: Отримуємо ВСІ категорії (це швидко, бо тягнемо тільки ID) ---
+            // Нам треба знати структуру всього дерева, щоб знайти всіх "онуків"
+            var allCategories = await _context.Categories
+                .Select(c => new { c.Id, c.ParentId })
+                .ToListAsync();
+
+            // --- КРОК 2: Рекурсивно збираємо ID потрібних категорій ---
+            var categoryIdsToSearch = new List<int>();
+
+            // Локальна функція для рекурсії
+            void AddCategoryAndChildren(int parentId)
+            {
+                // Додаємо саму категорію
+                categoryIdsToSearch.Add(parentId);
+
+                // Знаходимо дітей
+                var children = allCategories.Where(c => c.ParentId == parentId);
+
+                // Для кожної дитини запускаємо цю ж функцію (шукаємо її дітей)
+                foreach (var child in children)
+                {
+                    AddCategoryAndChildren(child.Id);
+                }
+            }
+
+            // Запускаємо процес з вибраної користувачем категорії
+            AddCategoryAndChildren(categoryId);
+
+            // Тепер у categoryIdsToSearch є ID: [Електроніка, Ноутбуки, Apple, MacBook...]
+
+            // --- КРОК 3: Запит до товарів (без змін) ---
+            var query = _context.Products
+                .Include(p => p.Category)
+                .Where(p => categoryIdsToSearch.Contains(p.CategoryId)); // <--- Шукаємо по повному списку
+
+            // --- КРОК 4: Пагінація та Відповідь (без змін) ---
+            var totalCount = await query.CountAsync();
+
+            var products = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var productDtos = products.Select(p => new ProductDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                Price = p.Price,
+                StockQuantity = p.StockQuantity,
+                CategoryName = p.Category?.Name,
+                Images = p.Images.Select(i => new ProductImageDto { Id = i.Id, Url = i.Url }).ToList()
+            }).ToList();
+
+            var result = new PagedResult<ProductDto>
+            {
+                Items = productDtos,
+                TotalCount = totalCount,
+                PageSize = pageSize,
+                CurrentPage = page,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            };
+
+            return Ok(result);
         }
     }
 }

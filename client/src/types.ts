@@ -8,10 +8,11 @@ export interface Product {
   name: string;
   price: number;
   description: string;
-  categoryName: string;
-  /** JSON string representing specifications */
+  categoryName: string; 
   specifications: string | null;
   images: ProductImage[];
+  stockQuantity: number;
+  isAvailable: boolean;
 }
 
 export interface CartItem extends Product {

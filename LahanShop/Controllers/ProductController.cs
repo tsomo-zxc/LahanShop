@@ -37,6 +37,7 @@ namespace LahanShop.Controllers
                     CategoryId = p.CategoryId,
                     CategoryName = p.Category.Name,
                     Specifications = p.Specifications,
+                    StockQuantity = p.StockQuantity,
                     Images = p.Images.Select(img => new ProductImageDto
                     {
                         Id = img.Id,
@@ -73,6 +74,7 @@ namespace LahanShop.Controllers
                 CategoryId = product.CategoryId,                
                 CategoryName = product.Category?.Name ?? "Без категорії",                
                 Specifications = product.Specifications,
+                StockQuantity = product.StockQuantity,
                 Images = product.Images.Select(img => new ProductImageDto
                 {
                     Id = img.Id,
@@ -102,6 +104,7 @@ namespace LahanShop.Controllers
                 Description = p.Description,
                 Price = p.Price,
                 CategoryName = p.Category?.Name, // Назва категорії
+                StockQuantity = p.StockQuantity,
                 Images = p.Images.Select(i => new ProductImageDto
                 {
                     Id = i.Id,
@@ -173,6 +176,7 @@ namespace LahanShop.Controllers
                 Name = product.Name,
                 CategoryId = product.CategoryId,
                 CategoryName = category.Name,
+                StockQuantity = product.StockQuantity,
                 Images = product.Images.Select(img => new ProductImageDto
                 {
                     Id = img.Id,
@@ -219,6 +223,7 @@ namespace LahanShop.Controllers
             product.Price = dto.Price;
             product.Description = dto.Description;
             product.CategoryId = dto.CategoryId;
+            product.StockQuantity = dto.StockQuantity;
             product.Specifications = dto.Specifications; // Оновлюємо JSON
 
             // 4. Обробка НОВИХ картинок (додавання до існуючих)

@@ -12,12 +12,14 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addToCart } = useCart();
   
+  // 1. Перевірка наявності (Тільки Є або Немає)
+  const isOutOfStock = product.stockQuantity <= 0;
+
   // Handle image logic
   const hasImages = product.images && product.images.length > 0;
   
-  // Construct image URL. Assuming API returns relative paths, or absolute. 
-  // If it's a full URL (http...), use it. Otherwise prepend base URL.
-  let imageUrl = "https://picsum.photos/400/400?grayscale"; // Default placeholder
+  // Construct image URL
+  let imageUrl = "https://picsum.photos/400/400?grayscale";
   
   if (hasImages) {
     const rawUrl = product.images[0].url;
@@ -29,9 +31,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   }
 
   const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent navigating to details
+    e.preventDefault(); 
     e.stopPropagation();
-    addToCart(product);
+    
+    // 2. Блокуємо додавання, якщо немає в наявності
+    if (!isOutOfStock) {
+      addToCart(product);
+    }
   };
 
   return (
@@ -40,16 +46,35 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <img 
           src={imageUrl} 
           alt={product.name}
-          className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500 ease-out"
+          className={`w-full h-full object-cover object-center transition-transform duration-500 ease-out 
+            ${isOutOfStock ? 'grayscale opacity-80' : 'group-hover:scale-110'}`}
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        
+        {/* 3. Плашка на зображенні, якщо немає товару */}
+        {isOutOfStock ? (
+            <div className="absolute inset-0 bg-white/40 flex items-center justify-center z-10">
+                <span className="bg-gray-800 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+                    Немає в наявності
+                </span>
+            </div>
+        ) : (
+            <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        )}
       </Link>
       
       <div className="p-5 flex flex-col flex-grow">
-        <div className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">
-          {product.categoryName}
+        <div className="flex justify-between items-start mb-1">
+            <div className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
+            {product.categoryName}
+            </div>
+            
+            {/* 4. Текстовий індикатор статусу */}
+            <div className={`text-xs font-medium ${isOutOfStock ? 'text-red-500' : 'text-green-600'}`}>
+                {isOutOfStock ? 'Немає в наявності' : 'Є в наявності'}
+            </div>
         </div>
+
         <Link to={`/product/${product.id}`} className="block">
             <h3 className="text-lg font-bold text-gray-900 mb-2 truncate group-hover:text-blue-600 transition-colors">
             {product.name}
@@ -60,14 +85,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </p>
         
         <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
-          <span className="text-xl font-bold text-gray-900">
+          <span className={`text-xl font-bold ${isOutOfStock ? 'text-gray-400' : 'text-gray-900'}`}>
             {CURRENCY_FORMATTER.format(product.price)}
           </span>
           
+          {/* 5. Кнопка: Змінює колір і блокується */}
           <button 
             onClick={handleAddToCart}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-600 hover:text-white transition-all duration-300"
-            title="Додати в кошик"
+            disabled={isOutOfStock}
+            className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300
+                ${isOutOfStock 
+                    ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-blue-600 hover:text-white'
+                }`}
+            title={isOutOfStock ? "Товар закінчився" : "Додати в кошик"}
           > 
             <span><FaShoppingCart size={16}  /></span>            
           </button>

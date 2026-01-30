@@ -13,5 +13,10 @@
         public string? Specifications { get; set; }
 
         public List<ProductImageDto> Images { get; set; } = new List<ProductImageDto>();
+
+        public int StockQuantity { get; set; }
+
+        // Логіка: доступний, якщо залишків більше 0
+        public bool IsAvailable => StockQuantity > 0;
     }
 }

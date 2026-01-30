@@ -15,11 +15,10 @@ namespace LahanShop.DTOs
 
         [Required]
         public int CategoryId { get; set; }
-
-        // Поле для JSON (користувач пришле рядок: '{"Color": "Red"}')
+        
         public string? Specifications { get; set; }
-
-        // --- СЮДИ ПРИЛЕТЯТЬ ФАЙЛИ ---
+        public int StockQuantity { get; set; }
+        
         public List<IFormFile>? Images { get; set; }
     }
 }

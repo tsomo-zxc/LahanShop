@@ -12,10 +12,11 @@ namespace LahanShop.Models
         [Column(TypeName = "decimal(18,2)")] 
         public decimal Price { get; set; }
 
-        public string? Specifications { get; set; }
+        public string? Specifications { get; set; }        
 
         public int CategoryId { get; set; }
         public Category? Category { get; set; }
         public List<ProductImage> Images { get; set; } = new List<ProductImage>();
+        public int StockQuantity { get; set; }
     }
 }

@@ -86,9 +86,8 @@ namespace LahanShop.Controllers
         }        
 
         // POST: api/products
-        [HttpPost]
-        // [FromForm] обов'язково, бо ми шлемо файли!
-        public async Task<ActionResult<ProductDto>> PostProduct([FromForm] CreateProductDto createDto)
+        [HttpPost]    
+        public async Task<ActionResult<ProductDto>> PostProduct([FromBody] CreateProductDto createDto)
         {
             var category = await _context.Categories.FindAsync(createDto.CategoryId);
             if (category == null) return BadRequest("Category not found");
@@ -99,7 +98,8 @@ namespace LahanShop.Controllers
                 Price = createDto.Price,
                 Description = createDto.Description,
                 CategoryId = createDto.CategoryId,
-                Specifications = createDto.Specifications
+                Specifications = createDto.Specifications,
+                StockQuantity = createDto.StockQuantity
             };
 
             // --- ЛОГІКА ЗБЕРЕЖЕННЯ ФАЙЛІВ ---
@@ -175,7 +175,7 @@ namespace LahanShop.Controllers
 
         // PUT: api/products/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromForm] CreateProductDto dto)
+        public async Task<IActionResult> UpdateProduct(int id, [FromBody] CreateProductDto dto)
         {
             // 1. Шукаємо товар разом з картинками
             var product = await _context.Products

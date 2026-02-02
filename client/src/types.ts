@@ -29,6 +29,7 @@ export interface Category {
   id: number;
   name: string;
   parentId: number | null;
+  parentName: string | null;
   productsCount: number;
   // Це поле ми заповнимо самі на фронтенді
   children?: Category[]; 

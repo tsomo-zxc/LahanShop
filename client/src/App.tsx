@@ -9,6 +9,8 @@ import CategoryPage from './pages/CategoryPage';
 import ProductDetails from './pages/ProductDetails';
 import AdminPage from './pages/AdminPage';
 import ProductFormPage from './pages/ProductFormPage';
+import AdminCategoriesPage from './pages/AdminCategoriesPage';
+import CategoryFormPage from './pages/CategoryFormPage';
 
 const App: React.FC = () => {
   return (
@@ -24,6 +26,9 @@ const App: React.FC = () => {
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/admin/products/new" element={<ProductFormPage />} />
               <Route path="/admin/products/edit/:id" element={<ProductFormPage />} />
+              <Route path="/admin/categories" element={<AdminCategoriesPage />} />
+              <Route path="/admin/categories/new" element={<CategoryFormPage />} />
+              <Route path="/admin/categories/edit/:id" element={<CategoryFormPage />} />
             </Routes>
           </main>
           <footer className="bg-white border-t border-gray-200 mt-20 py-10">

@@ -21,13 +21,24 @@ namespace LahanShop.Controllers
             _env = env;
         }
 
-        // GET: api/products
+        // GET: api/products?page=1&pageSize=10
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts()
-        {           
-            return await _context.Products
+        public async Task<ActionResult<PagedResult<ProductDto>>> GetProducts(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            var query = _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Images)
+                .AsQueryable(); // Важливо для побудови запиту
+
+            // 1. Рахуємо загальну кількість
+            var totalCount = await query.CountAsync();
+
+            // 2. Отримуємо порцію даних
+            var products = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(p => new ProductDto
                 {
                     Id = p.Id,
@@ -36,8 +47,8 @@ namespace LahanShop.Controllers
                     Description = p.Description,
                     CategoryId = p.CategoryId,
                     CategoryName = p.Category.Name,
-                    Specifications = p.Specifications,
                     StockQuantity = p.StockQuantity,
+                    Specifications = p.Specifications,
                     Images = p.Images.Select(img => new ProductImageDto
                     {
                         Id = img.Id,
@@ -46,6 +57,17 @@ namespace LahanShop.Controllers
                 })
                 .ToListAsync();
 
+            // 3. Формуємо відповідь з метаданими пагінації
+            var result = new PagedResult<ProductDto>
+            {
+                Items = products,
+                TotalCount = totalCount,
+                PageSize = pageSize,
+                CurrentPage = page,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            };
+
+            return Ok(result);
         }
 
         // GET: api/products/id

@@ -21,21 +21,31 @@ namespace LahanShop.Controllers
             _env = env;
         }
 
-        // GET: api/products?page=1&pageSize=10
+        // GET: api/products?page=1&pageSize=10&searchTerm=asus
         [HttpGet]
         public async Task<ActionResult<PagedResult<ProductDto>>> GetProducts(
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchTerm = null) // 👇 1. Додали параметр
         {
             var query = _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Images)
-                .AsQueryable(); // Важливо для побудови запиту
+                .AsQueryable();
 
-            // 1. Рахуємо загальну кількість
+            // 👇 2. Додали фільтрацію (важливо: ПЕРЕД пагінацією)
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                // Шукаємо по назві АБО по опису
+                query = query.Where(p =>
+                    p.Name.Contains(searchTerm) ||
+                    p.Description.Contains(searchTerm));
+            }
+
+            // 3. Рахуємо кількість (вже відфільтрованих) товарів
             var totalCount = await query.CountAsync();
 
-            // 2. Отримуємо порцію даних
+            // 4. Отримуємо порцію даних
             var products = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -57,7 +67,6 @@ namespace LahanShop.Controllers
                 })
                 .ToListAsync();
 
-            // 3. Формуємо відповідь з метаданими пагінації
             var result = new PagedResult<ProductDto>
             {
                 Items = products,

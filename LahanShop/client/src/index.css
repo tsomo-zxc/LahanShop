@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Більше тут нічого не треба! 
+   Tailwind сам скине відступи та налаштує шрифти. */
+
+body {
+  background-color: #f9fafb; /* Світло-сірий фон для краси (optional) */
+}

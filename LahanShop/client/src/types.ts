@@ -1,0 +1,36 @@
+export interface ProductImage {
+  id: number;
+  url: string;
+}
+
+export interface Product {
+  id: number;
+  name: string;
+  price: number;
+  description: string;
+  categoryName: string; 
+  specifications: string | null;
+  images: ProductImage[];
+  stockQuantity: number;
+  isAvailable: boolean;
+}
+
+export interface CartItem extends Product {
+  quantity: number;
+}
+
+export interface ApiResponse<T> {
+  data: T;
+  success: boolean;
+  message?: string;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  parentId: number | null;
+  parentName: string | null;
+  productsCount: number;
+  // Це поле ми заповнимо самі на фронтенді
+  children?: Category[]; 
+}

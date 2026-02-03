@@ -113,7 +113,7 @@ const Home: React.FC = () => {
 
   const pageTitle = searchTerm 
       ? (categoryId ? `Пошук у "${currentCategoryName}": "${searchTerm}"` : `Результати пошуку: "${searchTerm}"`)
-      : (categoryId ? currentCategoryName : 'Наші товари');
+      : (categoryId ? currentCategoryName : 'Товари');
 
   return (
     // 👇 ЗМІНЕНО pt-16 на pt-40 (для високого Navbar)

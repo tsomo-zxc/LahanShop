@@ -75,8 +75,7 @@ namespace LahanShop.Controllers
         }
 
         // PUT: api/categories/5
-        [HttpPut("{id}")]
-        // 👇 ВАЖЛИВО: Додано [FromBody], інакше дані не прийдуть!
+        [HttpPut("{id}")]        
         public async Task<IActionResult> UpdateCategory(int id, [FromBody] UpdateCategoryDto dto)
         {
             var category = await _context.Categories.FindAsync(id);

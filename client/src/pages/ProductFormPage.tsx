@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import axios  from 'axios';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import axios from 'axios';
 import { API_BASE_URL } from '../constants';
 import type { Category } from '../types';
-import { FaPlus, FaTrash } from 'react-icons/fa'; // Іконки для характеристик
+import { FaTrash, FaPlus, FaMagic,FaArrowLeft } from 'react-icons/fa';
 
-// Інтерфейс для одного рядка характеристики в UI
 interface SpecItem {
-  key: string;
-  value: string;
+    key: string;
+    value: string;
 }
 
 const ProductFormPage = () => {
@@ -16,273 +15,251 @@ const ProductFormPage = () => {
   const navigate = useNavigate();
   const isEditMode = !!id;
 
-  const [categories, setCategories] = useState<Category[]>([]);
-  
-  // Основні поля форми
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
-    stockQuantity: '',
-    categoryId: ''
+    categoryId: '',
+    stockQuantity: ''
   });
 
-  // Стан для Характеристик (UI)
   const [specs, setSpecs] = useState<SpecItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [images, setImages] = useState<string[]>([]);
+  const [newImageUrl, setNewImageUrl] = useState('');
 
+  // 1. ЗАВАНТАЖЕННЯ ДАНИХ (Виправлено парсинг)
   useEffect(() => {
-    // 1. Завантаження категорій
     const fetchCategories = async () => {
-      try {
-        const res = await axios.get(`${API_BASE_URL}/api/categories`);
-        setCategories(Array.isArray(res.data) ? res.data : []); 
-      } catch (err) {
-        console.error("Помилка категорій", err);
-      }
+        try {
+            const res = await axios.get(`${API_BASE_URL}/api/categories`);
+            setCategories(res.data);
+        } catch (e) { console.error(e); }
     };
     fetchCategories();
-    
+
     if (isEditMode) {
       const fetchProduct = async () => {
         try {
-            const res = await axios.get(`${API_BASE_URL}/api/products/${id}`);
-            const p = res.data;
-            
-            setFormData({
-                name: p.name,
-                description: p.description,
-                price: p.price.toString(),
-                stockQuantity: p.stockQuantity.toString(),
-                categoryId: p.categoryId ? p.categoryId.toString() : ''
-            });
+          const res = await axios.get(`${API_BASE_URL}/api/products/${id}`);
+          const p = res.data;
+          
+          setFormData({
+            name: p.name,
+            description: p.description,
+            price: p.price.toString(),
+            categoryId: p.categoryId.toString(),
+            stockQuantity: p.stockQuantity.toString()
+          });
 
-            // --- БЕЗПЕЧНИЙ ПАРСИНГ JSON ---
-            if (p.specifications) {
-                try {
-                    // Перевіряємо, чи схоже це на JSON (починається з {)
-                    if (p.specifications.trim().startsWith('{')) {
-                        const parsed = JSON.parse(p.specifications);
-                        const specsArray = Object.entries(parsed).map(([key, value]) => ({
-                            key,
-                            value: String(value)
-                        }));
-                        setSpecs(specsArray);
-                    } else {
-                        // Якщо це не JSON, а просто текст - ігноруємо
-                        console.warn("Дані специфікації не є JSON, пропускаємо.");
-                        setSpecs([]); 
-                    }
-                } catch (e) {
-                    console.warn("Пошкоджений JSON у базі даних, характеристики очищено.",e);
-                    setSpecs([]);
-                }
-            }
+          // 👇 ВИПРАВЛЕНО: Парсимо об'єкт {"Key":"Value"} назад у масив для форми
+          if (p.specifications) {
+              try {
+                  const parsed = JSON.parse(p.specifications);
+                  
+                  if (Array.isArray(parsed)) {
+                      // Якщо раптом в базі старий формат масиву
+                      setSpecs(parsed);
+                  } else if (typeof parsed === 'object') {
+                      // 👇 Якщо це ваш правильний формат об'єкта
+                      // Перетворюємо {"Колір":"Чорний"} -> [{key:"Колір", value:"Чорний"}]
+                      const mappedSpecs = Object.entries(parsed).map(([key, value]) => ({
+                          key: key,
+                          value: String(value)
+                      }));
+                      setSpecs(mappedSpecs);
+                  }
+              } catch (e) {
+                  // Якщо просто текст
+                  console.error(e);
+                  setSpecs([{ key: "Опис", value: p.specifications }]);
+              }
+          }
+
+          if (p.images) {
+             setImages(p.images.map((img: any) => img.url));
+          }
         } catch (error) {
-            console.error("Помилка завантаження товару", error);
+          console.error("Помилка завантаження товару", error);
         }
       };
       fetchProduct();
     }
   }, [id, isEditMode]);
 
-  // --- Функції для роботи зі специфікаціями ---
+  // 2. Шаблони (залишається без змін, воно працює з UI масивом)
+  const loadCategoryTemplates = async (catId: string) => {
+      if (!catId) return;
+      try {
+          const res = await axios.get(`${API_BASE_URL}/api/CategorySpecs/category/${catId}`);
+          const templates = res.data; 
 
-  const handleSpecChange = (index: number, field: 'key' | 'value', newValue: string) => {
-    const newSpecs = [...specs];
-    newSpecs[index][field] = newValue;
-    setSpecs(newSpecs);
+          setSpecs(prevSpecs => {
+              const newSpecs = [...prevSpecs];
+              templates.forEach((tmpl: any) => {
+                  const exists = newSpecs.some(s => s.key.toLowerCase() === tmpl.name.toLowerCase());
+                  if (!exists) {
+                      newSpecs.push({ key: tmpl.name, value: "" });
+                  }
+              });
+              return newSpecs;
+          });
+      } catch (error) {
+          console.error("Не вдалося завантажити шаблони", error);
+      }
   };
 
-  const addSpec = () => {
-    setSpecs([...specs, { key: '', value: '' }]);
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const newCatId = e.target.value;
+      setFormData({ ...formData, categoryId: newCatId });
+      if (newCatId) loadCategoryTemplates(newCatId);
   };
 
-  const removeSpec = (index: number) => {
-    const newSpecs = specs.filter((_, i) => i !== index);
-    setSpecs(newSpecs);
-  };
-
-  // --- Збереження ---
-
- const handleSubmit = async (e: React.FormEvent) => {
+  // 3. ЗБЕРЕЖЕННЯ (Виправлено формат JSON)
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 1. Очищення та конвертація даних
-    const cleanPrice = formData.price.toString().replace(',', '.');
-    const finalPrice = parseFloat(cleanPrice);
-    const finalStock = parseInt(formData.stockQuantity);
-    const finalCategoryId = parseInt(formData.categoryId);
-
-    // 2. Підготовка JSON характеристик
+    // 👇 ВИПРАВЛЕНО: Конвертуємо масив UI у простий об'єкт {"Ключ": "Значення"}
     const specsObject: Record<string, string> = {};
+    
     specs.forEach(item => {
-        if (item.key.trim()) {
-            specsObject[item.key] = item.value;
+        if (item.key.trim() !== "") {
+            specsObject[item.key.trim()] = item.value.trim();
         }
     });
 
-    const jsonSpecifications = Object.keys(specsObject).length > 0 
-        ? JSON.stringify(specsObject) 
-        : null;
+    // Тепер це буде {"Колір":"Чорний", "Вага":"1кг"} замість масиву
+    const specsJson = JSON.stringify(specsObject);
 
-    // 3. Валідація на фронтенді
-    if (!formData.name.trim()) {
-        alert("Помилка: Вкажіть назву товару!");
-        return;
-    }
-    if (isNaN(finalPrice) || finalPrice < 1) {
-        alert("Помилка: Ціна має бути більше 0!");
-        return;
-    }
-    if (isNaN(finalCategoryId) || finalCategoryId === 0) {
-        alert("Помилка: Оберіть категорію зі списку!");
-        return;
-    }
-
-    // --- ОСЬ ТУТ МИ СТВОРЮЄМО PAYLOAD (перед відправкою) ---
-   const payload = {
-        Name: formData.name,            // <--- Ключ з Великої
-        Description: formData.description,
-        Price: finalPrice,
-        StockQuantity: finalStock || 0,
-        CategoryId: finalCategoryId,
-        Specifications: jsonSpecifications
+    const payload = {
+        ...formData,
+        price: parseFloat(formData.price),
+        stockQuantity: parseInt(formData.stockQuantity),
+        categoryId: parseInt(formData.categoryId),
+        specifications: specsJson, // Відправляємо правильний JSON
+        imageUrls: images
     };
 
-    console.log("Відправляємо на сервер:", payload);
-
     try {
-      // Налаштування заголовків (щоб сервер точно зрозумів JSON)
-      const config = {
-        headers: {
-          'Content-Type': 'application/json'
+        if (isEditMode) {
+            await axios.put(`${API_BASE_URL}/api/products/${id}`, payload);
+            alert("Товар оновлено!");
+        } else {
+            await axios.post(`${API_BASE_URL}/api/products`, payload);
+            alert("Товар створено!");
+            navigate('/admin');
         }
-      };
-
-      if (isEditMode) {
-        await axios.put(`${API_BASE_URL}/api/products/${id}`, payload, config);
-      } else {
-        await axios.post(`${API_BASE_URL}/api/products`, payload, config);
-      }
-      
-      // Успіх -> повертаємось в адмінку
-      navigate('/admin');
-
     } catch (error) {
-      console.error("Помилка:", error);
-      
-      if (axios.isAxiosError(error)) {
-          const serverData = error.response?.data;
-          
-          if (serverData?.errors) {
-              const errorMsg = Object.values(serverData.errors).flat().join('\n');
-              alert(`Помилка валідації:\n${errorMsg}`);
-          } else if (typeof serverData === 'string') {
-              alert(`Помилка сервера: ${serverData}`);
-          } else {
-              alert(`Помилка ${error.response?.status}: ${error.message}`);
-          }
-      } else {
-          alert('Невідома помилка при збереженні.');
-      }
+        alert("Помилка збереження");
+        console.error(error);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleAddImage = () => {
+      if (newImageUrl) {
+          setImages([...images, newImageUrl]);
+          setNewImageUrl('');
+      }
+  };
+
+  const updateSpec = (index: number, field: 'key' | 'value', newValue: string) => {
+      const newSpecs = [...specs];
+      newSpecs[index][field] = newValue;
+      setSpecs(newSpecs);
+  };
+
+  const removeSpec = (index: number) => {
+      setSpecs(specs.filter((_, i) => i !== index));
+  };
+
+  const addEmptySpec = () => {
+      setSpecs([...specs, { key: '', value: '' }]);
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 pt-24 max-w-3xl">
+    <div className="container mx-auto px-4 py-8 pt-24 max-w-4xl">
+        <div className="mb-6">
+        <Link to="/admin" className="text-gray-600 hover:text-blue-600 flex items-center gap-2 font-medium">
+            <FaArrowLeft /> Назад до Продуктів
+        </Link>
+      </div>
       <h1 className="text-2xl font-bold mb-6">{isEditMode ? 'Редагувати товар' : 'Новий товар'}</h1>
       
-      <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
         
-        {/* --- Основні поля --- */}
-        <div className="grid grid-cols-1 gap-4">
+        {/* ЛІВА КОЛОНКА */}
+        <div className="space-y-6 bg-white p-6 rounded-lg shadow">
+            <h2 className="text-lg font-semibold border-b pb-2">Основна інформація</h2>
             <div>
-                <label className="block text-sm font-medium text-gray-700">Назва</label>
-                <input name="name" value={formData.name} onChange={handleChange} required 
-                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2" />
+                <label className="block text-sm font-medium">Назва товару</label>
+                <input className="w-full border p-2 rounded mt-1" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
             </div>
-
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Опис</label>
-                <textarea name="description" value={formData.description} onChange={handleChange} rows={3}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2" />
-            </div>
-            
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Ціна (грн)</label>
-                    <input type="number" name="price" value={formData.price} onChange={handleChange} required 
-                           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2" />
+                    <label className="block text-sm font-medium">Ціна (грн)</label>
+                    <input type="number" className="w-full border p-2 rounded mt-1" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} required />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Кількість</label>
-                    <input type="number" name="stockQuantity" value={formData.stockQuantity} onChange={handleChange} required 
-                           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2" />
+                    <label className="block text-sm font-medium">Кількість</label>
+                    <input type="number" className="w-full border p-2 rounded mt-1" value={formData.stockQuantity} onChange={e => setFormData({...formData, stockQuantity: e.target.value})} required />
+                </div>
+            </div>
+            <div>
+                <label className="block text-sm font-medium">Категорія</label>
+                <div className="flex gap-2">
+                    <select className="w-full border p-2 rounded mt-1 bg-white" value={formData.categoryId} onChange={handleCategoryChange} required >
+                        <option value="">-- Оберіть категорію --</option>
+                        {categories.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
+                    </select>
+                    <button type="button" title="Загрузити шаблон характеристик" onClick={() => loadCategoryTemplates(formData.categoryId)} className="mt-1 bg-gray-100 p-2 rounded text-blue-600"><FaMagic /></button>
+                </div>
+            </div>
+            <div>
+                <label className="block text-sm font-medium">Опис</label>
+                <textarea className="w-full border p-2 rounded mt-1 h-32" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+            </div>
+        </div>
+
+        {/* ПРАВА КОЛОНКА */}
+        <div className="space-y-6">
+            {/* Характеристики */}
+            <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex justify-between items-center border-b pb-2 mb-4">
+                    <h2 className="text-lg font-semibold">Характеристики</h2>
+                    <button type="button" onClick={addEmptySpec} className="text-sm text-blue-600 hover:underline flex items-center gap-1"><FaPlus /> Додати поле</button>
+                </div>
+                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                    {specs.map((spec, index) => (
+                        <div key={index} className="flex gap-2 items-center">
+                            <input placeholder="Назва" className="w-1/3 border p-2 rounded text-sm bg-gray-50 font-medium" value={spec.key} onChange={(e) => updateSpec(index, 'key', e.target.value)} />
+                            <input placeholder="Значення" className="flex-1 border p-2 rounded text-sm" value={spec.value} onChange={(e) => updateSpec(index, 'value', e.target.value)} />
+                            <button type="button" onClick={() => removeSpec(index)} className="text-gray-400 hover:text-red-500"><FaTrash /></button>
+                        </div>
+                    ))}
                 </div>
             </div>
 
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Категорія</label>
-                <select name="categoryId" value={formData.categoryId} onChange={handleChange} required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 bg-white">
-                    <option value="">-- Оберіть категорію --</option>
-                    {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+            {/* Фото */}
+            <div className="bg-white p-6 rounded-lg shadow">
+                <h2 className="text-lg font-semibold border-b pb-2 mb-4">Зображення</h2>
+                <div className="flex gap-2 mb-4">
+                    <input placeholder="URL зображення" className="flex-1 border p-2 rounded" value={newImageUrl} onChange={e => setNewImageUrl(e.target.value)} />
+                    <button type="button" onClick={handleAddImage} className="bg-green-600 text-white px-4 rounded hover:bg-green-700">OK</button>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                    {images.map((img, idx) => (
+                        <div key={idx} className="relative group border rounded overflow-hidden h-24">
+                            <img src={img} alt="Product" className="w-full h-full object-cover" />
+                            <button type="button" onClick={() => setImages(images.filter((_, i) => i !== idx))} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"><FaTrash size={12} /></button>
+                        </div>
                     ))}
-                </select>
+                </div>
             </div>
+
+            <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-lg text-lg font-bold hover:bg-blue-700 shadow-lg transition transform active:scale-[0.98]">
+                {isEditMode ? 'Зберегти зміни' : 'Створити товар'}
+            </button>
         </div>
-
-        <hr className="border-gray-200" />
-
-        {/* --- Секція Характеристик (Specifications) --- */}
-        <div>
-            <div className="flex justify-between items-center mb-2">
-                <label className="block text-lg font-medium text-gray-900">Характеристики</label>
-                <button type="button" onClick={addSpec} className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1">
-                    <FaPlus /> Додати
-                </button>
-            </div>
-            
-            <div className="space-y-3 bg-gray-50 p-4 rounded-md">
-                {specs.length === 0 && (
-                    <p className="text-sm text-gray-500 text-center">Характеристик немає. Натисніть "Додати".</p>
-                )}
-
-                {specs.map((spec, index) => (
-                    <div key={index} className="flex gap-2 items-center">
-                        <input 
-                            placeholder="Назва (напр. Колір)" 
-                            value={spec.key}
-                            onChange={(e) => handleSpecChange(index, 'key', e.target.value)}
-                            className="flex-1 rounded-md border-gray-300 shadow-sm border p-2 text-sm"
-                        />
-                        <input 
-                            placeholder="Значення (напр. Червоний)" 
-                            value={spec.value}
-                            onChange={(e) => handleSpecChange(index, 'value', e.target.value)}
-                            className="flex-1 rounded-md border-gray-300 shadow-sm border p-2 text-sm"
-                        />
-                        <button 
-                            type="button" 
-                            onClick={() => removeSpec(index)}
-                            className="text-red-500 hover:text-red-700 p-2"
-                            title="Видалити"
-                        >
-                            <FaTrash />
-                        </button>
-                    </div>
-                ))}
-            </div>
-        </div>
-
-        <button type="submit" className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition shadow-md">
-            Зберегти Товар
-        </button>
       </form>
     </div>
   );

@@ -16,5 +16,6 @@ namespace LahanShop.Models
                 
         [JsonIgnore]
         public List<Product> Products { get; set; } = new List<Product>();
+        public List<CategorySpecification> Specifications { get; set; } = new();
     }
 }

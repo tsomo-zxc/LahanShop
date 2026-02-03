@@ -56,6 +56,7 @@ namespace LahanShop.Controllers
 
             return score;
         }
+
         // GET: api/products
         [HttpGet]
         public async Task<ActionResult<PagedResult<ProductDto>>> GetProducts(
@@ -64,15 +65,12 @@ namespace LahanShop.Controllers
             [FromQuery] string? searchTerm = null,
             [FromQuery] int? categoryId = null)
         {
-            // 1. Початковий запит
             var query = _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Images)
                 .AsQueryable();
 
-            // ---------------------------------------------------------
-            // ФІЛЬТРАЦІЯ ПО КАТЕГОРІЇ (З рекурсією)
-            // ---------------------------------------------------------
+            // 1. Фільтрація по категорії
             if (categoryId.HasValue)
             {
                 var allCategories = await _context.Categories
@@ -92,19 +90,13 @@ namespace LahanShop.Controllers
                 query = query.Where(p => categoryIdsToSearch.Contains(p.CategoryId));
             }
 
-            // ---------------------------------------------------------
-            // РІВЕНЬ 1: РОЗУМНА ФІЛЬТРАЦІЯ (SQL)
-            // ---------------------------------------------------------
+            // 2. Фільтрація по тексту (SQL частина)
             string[]? searchTerms = null;
-
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                // Розбиваємо "Asus Laptop" на ["asus", "laptop"]
-                // Trim() і ToLower() робимо для чистоти
                 var normalizedSearch = searchTerm.Trim().ToLower();
                 searchTerms = normalizedSearch.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-                // Товар повинен містити КОЖНЕ слово із запиту (логіка AND)
                 foreach (var term in searchTerms)
                 {
                     query = query.Where(p =>
@@ -115,27 +107,28 @@ namespace LahanShop.Controllers
                 }
             }
 
-            // Рахуємо загальну кількість знайдених товарів (для пагінації)
             var totalCount = await query.CountAsync();
-
-            // ---------------------------------------------------------
-            // РІВЕНЬ 2: РАНЖУВАННЯ (In-Memory)
-            // ---------------------------------------------------------
             List<Product> products;
 
+            // 3. СОРТУВАННЯ
             if (!string.IsNullOrWhiteSpace(searchTerm) && searchTerms != null)
             {
-                // Якщо є пошук — витягуємо знайдені товари в пам'ять для сортування
-                // (Примітка: якщо товарів 100 тисяч, тут треба оптимізацію, але для магазину < 5000 це ок)
+                // --- ЯКЩО Є ПОШУК ---
                 var rawProducts = await query.ToListAsync();
 
                 products = rawProducts
                     .Select(p => new
                     {
                         Product = p,
-                        Score = CalculateRelevanceScore(p, searchTerms) // Нараховуємо бали
+                        Score = CalculateRelevanceScore(p, searchTerms)
                     })
-                    .OrderByDescending(x => x.Score) // Найкращі зверху
+                    // 👇 СПОЧАТКУ ТІ, ЩО В НАЯВНОСТІ
+                    .OrderByDescending(x => x.Product.StockQuantity > 0)
+                    // ПОТІМ НАЙБІЛЬШ РЕЛЕВАНТНІ
+                    .ThenByDescending(x => x.Score)
+                    // ПОТІМ НОВІШІ
+                    .ThenByDescending(x => x.Product.Id)
+
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .Select(x => x.Product)
@@ -143,17 +136,18 @@ namespace LahanShop.Controllers
             }
             else
             {
-                // Якщо пошуку немає — звичайне сортування (швидше, бо на рівні бази)
+                // --- ЯКЩО ПРОСТО ПЕРЕГЛЯД (БЕЗ ПОШУКУ) ---
                 products = await query
-                    .OrderByDescending(p => p.Id) // Спочатку нові
+                    // 👇 ГОЛОВНА ЗМІНА ТУТ:
+                    .OrderByDescending(p => p.StockQuantity > 0) // Спочатку True (в наявності), потім False
+                    .ThenByDescending(p => p.Id) // Всередині груп - спочатку нові
+
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
             }
 
-            // ---------------------------------------------------------
-            // ФОРМУВАННЯ ВІДПОВІДІ (DTO)
-            // ---------------------------------------------------------
+            // 4. Формування DTO (без змін)
             var productDtos = products.Select(p => new ProductDto
             {
                 Id = p.Id,

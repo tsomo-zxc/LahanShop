@@ -20,56 +20,160 @@ namespace LahanShop.Controllers
             _context = context;
             _env = env;
         }
+        private int CalculateRelevanceScore(Product p, string[] terms)
+        {
+            int score = 0;
+            string nameLower = p.Name.ToLower();
+            string descLower = p.Description?.ToLower() ?? "";
+            string categoryLower = p.Category?.Name?.ToLower() ?? "";
 
-        // GET: api/products?page=1&pageSize=10&searchTerm=asus
+            foreach (var term in terms)
+            {
+                // 1. Точне співпадіння в назві — ДЖЕКПОТ (наприклад, шукали "S24" і в назві є "S24")
+                // Ми додаємо пробіли, щоб не плутати "apple" і "pineapple"
+                if (nameLower.Contains(" " + term + " ") || nameLower.StartsWith(term + " ") || nameLower.EndsWith(" " + term) || nameLower == term)
+                {
+                    score += 50;
+                }
+                // 2. Часткове співпадіння в назві
+                else if (nameLower.Contains(term))
+                {
+                    score += 20;
+                }
+
+                // 3. Співпадіння в категорії
+                if (categoryLower.Contains(term))
+                {
+                    score += 15;
+                }
+
+                // 4. Співпадіння в описі (вага найменша)
+                if (descLower.Contains(term))
+                {
+                    score += 5;
+                }
+            }
+
+            return score;
+        }
+        // GET: api/products
         [HttpGet]
         public async Task<ActionResult<PagedResult<ProductDto>>> GetProducts(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
-            [FromQuery] string? searchTerm = null) // 👇 1. Додали параметр
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] int? categoryId = null)
         {
+            // 1. Початковий запит
             var query = _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Images)
                 .AsQueryable();
 
-            // 👇 2. Додали фільтрацію (важливо: ПЕРЕД пагінацією)
-            if (!string.IsNullOrWhiteSpace(searchTerm))
+            // ---------------------------------------------------------
+            // ФІЛЬТРАЦІЯ ПО КАТЕГОРІЇ (З рекурсією)
+            // ---------------------------------------------------------
+            if (categoryId.HasValue)
             {
-                // Шукаємо по назві АБО по опису
-                query = query.Where(p =>
-                    p.Name.Contains(searchTerm) ||
-                    p.Description.Contains(searchTerm));
+                var allCategories = await _context.Categories
+                    .Select(c => new { c.Id, c.ParentId })
+                    .ToListAsync();
+
+                var categoryIdsToSearch = new List<int>();
+
+                void AddCategoryAndChildren(int parentId)
+                {
+                    categoryIdsToSearch.Add(parentId);
+                    var children = allCategories.Where(c => c.ParentId == parentId);
+                    foreach (var child in children) AddCategoryAndChildren(child.Id);
+                }
+
+                AddCategoryAndChildren(categoryId.Value);
+                query = query.Where(p => categoryIdsToSearch.Contains(p.CategoryId));
             }
 
-            // 3. Рахуємо кількість (вже відфільтрованих) товарів
+            // ---------------------------------------------------------
+            // РІВЕНЬ 1: РОЗУМНА ФІЛЬТРАЦІЯ (SQL)
+            // ---------------------------------------------------------
+            string[]? searchTerms = null;
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                // Розбиваємо "Asus Laptop" на ["asus", "laptop"]
+                // Trim() і ToLower() робимо для чистоти
+                var normalizedSearch = searchTerm.Trim().ToLower();
+                searchTerms = normalizedSearch.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                // Товар повинен містити КОЖНЕ слово із запиту (логіка AND)
+                foreach (var term in searchTerms)
+                {
+                    query = query.Where(p =>
+                        p.Name.ToLower().Contains(term) ||
+                        p.Description.ToLower().Contains(term) ||
+                        (p.Specifications != null && p.Specifications.ToLower().Contains(term))
+                    );
+                }
+            }
+
+            // Рахуємо загальну кількість знайдених товарів (для пагінації)
             var totalCount = await query.CountAsync();
 
-            // 4. Отримуємо порцію даних
-            var products = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Select(p => new ProductDto
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Price = p.Price,
-                    Description = p.Description,
-                    CategoryId = p.CategoryId,
-                    CategoryName = p.Category.Name,
-                    StockQuantity = p.StockQuantity,
-                    Specifications = p.Specifications,
-                    Images = p.Images.Select(img => new ProductImageDto
+            // ---------------------------------------------------------
+            // РІВЕНЬ 2: РАНЖУВАННЯ (In-Memory)
+            // ---------------------------------------------------------
+            List<Product> products;
+
+            if (!string.IsNullOrWhiteSpace(searchTerm) && searchTerms != null)
+            {
+                // Якщо є пошук — витягуємо знайдені товари в пам'ять для сортування
+                // (Примітка: якщо товарів 100 тисяч, тут треба оптимізацію, але для магазину < 5000 це ок)
+                var rawProducts = await query.ToListAsync();
+
+                products = rawProducts
+                    .Select(p => new
                     {
-                        Id = img.Id,
-                        Url = img.Url
-                    }).ToList()
-                })
-                .ToListAsync();
+                        Product = p,
+                        Score = CalculateRelevanceScore(p, searchTerms) // Нараховуємо бали
+                    })
+                    .OrderByDescending(x => x.Score) // Найкращі зверху
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(x => x.Product)
+                    .ToList();
+            }
+            else
+            {
+                // Якщо пошуку немає — звичайне сортування (швидше, бо на рівні бази)
+                products = await query
+                    .OrderByDescending(p => p.Id) // Спочатку нові
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+            }
+
+            // ---------------------------------------------------------
+            // ФОРМУВАННЯ ВІДПОВІДІ (DTO)
+            // ---------------------------------------------------------
+            var productDtos = products.Select(p => new ProductDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Price = p.Price,
+                Description = p.Description,
+                CategoryId = p.CategoryId,
+                CategoryName = p.Category?.Name ?? "Без категорії",
+                StockQuantity = p.StockQuantity,
+                Specifications = p.Specifications,
+                Images = p.Images.Select(img => new ProductImageDto
+                {
+                    Id = img.Id,
+                    Url = img.Url
+                }).ToList()
+            }).ToList();
 
             var result = new PagedResult<ProductDto>
             {
-                Items = products,
+                Items = productDtos,
                 TotalCount = totalCount,
                 PageSize = pageSize,
                 CurrentPage = page,
@@ -114,7 +218,38 @@ namespace LahanShop.Controllers
             };
 
             return productDto;
-        }        
+        }
+        // GET: api/categories/5/path        
+        [HttpGet("path/{id}")]
+        public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategoryPath(int id)
+        {
+            var path = new List<CategoryDto>();
+            var currentId = (int?)id;
+
+            // Цикл: піднімаємось вгору, поки є ParentId
+            while (currentId.HasValue)
+            {
+                var category = await _context.Categories
+                    .Include(c => c.Parent) // Підтягуємо інфо про батька
+                    .FirstOrDefaultAsync(c => c.Id == currentId);
+
+                if (category == null) break;
+
+                // Додаємо в ПОЧАТОК списку (бо ми йдемо з кінця)
+                path.Insert(0, new CategoryDto
+                {
+                    Id = category.Id,
+                    Name = category.Name,
+                    ParentId = category.ParentId,
+                    ParentName = category.Parent?.Name
+                });
+
+                // Переходимо на рівень вище
+                currentId = category.ParentId;
+            }
+
+            return Ok(path);
+        }
 
         // POST: api/products
         [HttpPost]    

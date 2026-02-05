@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/axiosInstance';
+
+interface IdentityError {
+    code: string;
+    description: string;
+}
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -36,17 +42,32 @@ const RegisterPage = () => {
       alert("Реєстрація успішна! Тепер увійдіть.");
       navigate('/login');
       
-    } catch (err: any) {
+    } catch (err) { // 1. Прибрали : any (тепер це unknown)
         console.error(err);
-        // Бекенд Identity часто повертає масив помилок
-        if (err.response?.data && Array.isArray(err.response.data)) {
-            // Збираємо всі помилки в одну строку
-            const messages = err.response.data.map((e: any) => e.description).join(' ');
-            setError(messages);
+
+        // 2. Перевіряємо, чи це помилка від Axios
+        if (axios.isAxiosError(err) && err.response) {
+            const data = err.response.data;
+
+            // 3. Перевіряємо, чи це масив (стандартна відповідь Identity)
+            if (Array.isArray(data)) {
+                // Кастимо data до нашого інтерфейсу
+                const messages = (data as IdentityError[])
+                    .map(e => e.description)
+                    .join(' ');
+                setError(messages);
+            } 
+            // 4. Якщо це просто рядок (наприклад "Користувач вже існує")
+            else if (typeof data === 'string') {
+                setError(data);
+            } else {
+                setError("Помилка реєстрації");
+            }
         } else {
-            setError(err.response?.data || "Помилка реєстрації");
+            // Якщо це не Axios помилка (наприклад, код впаде)
+            setError("Сталася невідома помилка");
         }
-    } finally {
+        } finally {
       setIsLoading(false);
     }
   };

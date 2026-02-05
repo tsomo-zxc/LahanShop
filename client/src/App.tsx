@@ -14,6 +14,7 @@ import CategoryFormPage from './pages/CategoryFormPage';
 import { AuthProvider } from './context/AuthContext.tsx'
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const App: React.FC = () => {
   return (
@@ -30,11 +31,18 @@ const App: React.FC = () => {
               <Route path="/product/:id" element={<ProductDetails />} />
               <Route path="/category/:id" element={<CategoryPage />} />
               <Route path="/admin" element={<AdminPage />} />
-              <Route path="/admin/products/new" element={<ProductFormPage />} />
-              <Route path="/admin/products/edit/:id" element={<ProductFormPage />} />
-              <Route path="/admin/categories" element={<AdminCategoriesPage />} />
-              <Route path="/admin/categories/new" element={<CategoryFormPage />} />
-              <Route path="/admin/categories/edit/:id" element={<CategoryFormPage />} />
+
+              <Route element={<ProtectedRoute requireAdmin={true} />}>
+                <Route path="/admin/products/new" element={<ProductFormPage />} />
+                <Route path="/admin/products/edit/:id" element={<ProductFormPage />} />
+                <Route path="/admin/categories" element={<AdminCategoriesPage />} />
+                <Route path="/admin/categories/new" element={<CategoryFormPage />} />
+                <Route path="/admin/categories/edit/:id" element={<CategoryFormPage />} />
+              </Route>  
+              
+              <Route element={<ProtectedRoute />}>
+             {/* <Route path="/profile" element={<ProfilePage />} /> */}
+              </Route>
             </Routes>
           </main>
           <footer className="bg-white border-t border-gray-200 mt-20 py-10">

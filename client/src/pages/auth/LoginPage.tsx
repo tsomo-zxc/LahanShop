@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import api from '../../services/axiosInstance'; // Наш налаштований axios
 import { useAuth } from '../../context/AuthContext'; // Наш контекст
 
@@ -35,10 +36,24 @@ const LoginPage = () => {
           navigate('/');
       }
       
-    } catch (err: any) {
+    } catch (err) { // 1. Прибираємо : any
       console.error(err);
-      // Якщо сервер повернув повідомлення про помилку (напр. "Невірний пароль")
-      setError(err.response?.data || "Не вдалося увійти. Перевірте дані.");
+      
+      let errorMessage = "Не вдалося увійти. Перевірте дані.";
+
+      // 2. Перевіряємо тип помилки
+      if (axios.isAxiosError(err)) {
+          // Якщо сервер прислав текст помилки
+          if (typeof err.response?.data === 'string') {
+              errorMessage = err.response.data;
+          }
+          // Якщо сервер прислав JSON об'єкт { message: "..." }
+          else if (err.response?.data?.message) {
+              errorMessage = err.response.data.message;
+          }
+      }
+
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../services/axiosInstance';
 import { Link } from 'react-router-dom';
 import type { Product } from '../types';
-import { API_BASE_URL } from '../constants';
 
 import { FaEdit, FaTrash, FaPlus, FaChevronLeft, FaChevronRight, FaFolder, FaSearch } from 'react-icons/fa';
 
@@ -42,8 +41,8 @@ const AdminPage = () => {
       setLoading(true);
       try {
         // 👇 Додали &searchTerm=${debouncedTerm}
-        const res = await axios.get<PagedResponse>(
-            `${API_BASE_URL}/api/products?page=${currentPage}&pageSize=10&searchTerm=${debouncedTerm}`
+        const res = await api.get<PagedResponse>(
+            `/api/products?page=${currentPage}&pageSize=10&searchTerm=${debouncedTerm}`
         );
         
         setProducts(res.data.items);
@@ -61,7 +60,7 @@ const AdminPage = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm('Видалити цей товар?')) {
       try {
-        await axios.delete(`${API_BASE_URL}/api/products/${id}`);
+        await api.delete(`/api/products/${id}`);
         setRefreshKey(prev => prev + 1);
       } catch (error) {
         console.error("Помилка видалення:", error);

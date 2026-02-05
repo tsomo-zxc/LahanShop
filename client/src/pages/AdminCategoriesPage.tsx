@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import api from '../services/axiosInstance';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { API_BASE_URL } from '../constants';
@@ -11,7 +12,7 @@ const AdminCategoriesPage = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/categories`);
+      const res = await api.get(`${API_BASE_URL}/api/categories`);
       setCategories(res.data);
     } catch (error) {
       console.error("Помилка:", error);
@@ -27,14 +28,30 @@ const AdminCategoriesPage = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm('Видалити цю категорію?')) {
       try {
-        await axios.delete(`${API_BASE_URL}/api/categories/${id}`);
+        await api.delete(`${API_BASE_URL}/api/categories/${id}`);
         fetchCategories();
-      } catch (error: any) {
-        // Виводимо повідомлення від сервера (наприклад, "є товари")
-        alert(error.response?.data || "Не вдалося видалити категорію.");
+      } catch (error) { 
+        
+        let errorMessage = "Не вдалося видалити категорію.";
+       
+        if (axios.isAxiosError(error)) {            
+            if (error.response?.data) {
+                errorMessage = error.response.data;
+            }
+        } 
+        
+        alert(errorMessage);
       }
     }
   };
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-screen pt-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        );
+      }
 
   return (
     <div className="container mx-auto px-4 py-8 pt-24">

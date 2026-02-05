@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import axios from 'axios';
-import { API_BASE_URL } from '../constants';
-import type { Category } from '../types';
+import api from '../services/axiosInstance';
+import type { Category, CategorySpecTemplate, ProductImage } from '../types';
 import { FaTrash, FaPlus, FaMagic,FaArrowLeft } from 'react-icons/fa';
 
 interface SpecItem {
@@ -32,7 +31,7 @@ const ProductFormPage = () => {
   useEffect(() => {
     const fetchCategories = async () => {
         try {
-            const res = await axios.get(`${API_BASE_URL}/api/categories`);
+            const res = await api.get(`/api/categories`);
             setCategories(res.data);
         } catch (e) { console.error(e); }
     };
@@ -41,7 +40,7 @@ const ProductFormPage = () => {
     if (isEditMode) {
       const fetchProduct = async () => {
         try {
-          const res = await axios.get(`${API_BASE_URL}/api/products/${id}`);
+          const res = await api.get(`/api/products/${id}`);
           const p = res.data;
           
           setFormData({
@@ -77,7 +76,7 @@ const ProductFormPage = () => {
           }
 
           if (p.images) {
-             setImages(p.images.map((img: any) => img.url));
+             setImages(p.images.map((img: ProductImage) => img.url));
           }
         } catch (error) {
           console.error("Помилка завантаження товару", error);
@@ -91,12 +90,12 @@ const ProductFormPage = () => {
   const loadCategoryTemplates = async (catId: string) => {
       if (!catId) return;
       try {
-          const res = await axios.get(`${API_BASE_URL}/api/CategorySpecs/category/${catId}`);
+          const res = await api.get(`/api/CategorySpecs/category/${catId}`);
           const templates = res.data; 
 
           setSpecs(prevSpecs => {
               const newSpecs = [...prevSpecs];
-              templates.forEach((tmpl: any) => {
+              templates.forEach((tmpl: CategorySpecTemplate) => {
                   const exists = newSpecs.some(s => s.key.toLowerCase() === tmpl.name.toLowerCase());
                   if (!exists) {
                       newSpecs.push({ key: tmpl.name, value: "" });
@@ -142,10 +141,10 @@ const ProductFormPage = () => {
 
     try {
         if (isEditMode) {
-            await axios.put(`${API_BASE_URL}/api/products/${id}`, payload);
+            await api.put(`/api/products/${id}`, payload);
             alert("Товар оновлено!");
         } else {
-            await axios.post(`${API_BASE_URL}/api/products`, payload);
+            await api.post(`/api/products`, payload);
             alert("Товар створено!");
             navigate('/admin');
         }
@@ -216,7 +215,7 @@ const ProductFormPage = () => {
             </div>
             <div>
                 <label className="block text-sm font-medium">Опис</label>
-                <textarea className="w-full border p-2 rounded mt-1 h-32" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                <textarea className="w-full border p-2 rounded mt-1 h-64" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
             </div>
         </div>
 

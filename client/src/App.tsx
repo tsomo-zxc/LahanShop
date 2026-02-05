@@ -11,16 +11,22 @@ import AdminPage from './pages/AdminPage';
 import ProductFormPage from './pages/ProductFormPage';
 import AdminCategoriesPage from './pages/AdminCategoriesPage';
 import CategoryFormPage from './pages/CategoryFormPage';
+import { AuthProvider } from './context/AuthContext.tsx'
+import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
 
 const App: React.FC = () => {
   return (
     <CartProvider>
       <BrowserRouter>
+      <AuthProvider>
         <div className="flex flex-col min-h-screen">
           <Navbar />
           <main className="flex-grow pt-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
               <Route path="/product/:id" element={<ProductDetails />} />
               <Route path="/category/:id" element={<CategoryPage />} />
               <Route path="/admin" element={<AdminPage />} />
@@ -49,6 +55,7 @@ const App: React.FC = () => {
           pauseOnHover
           theme="light"
         />
+        </AuthProvider>
       </BrowserRouter>
     </CartProvider>
   );

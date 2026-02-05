@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import { API_BASE_URL } from '../constants';
+import api from '../services/axiosInstance';
 import type { Category } from '../types';
 import { FaTrash, FaPlus, FaArrowLeft } from 'react-icons/fa';
 
@@ -35,7 +35,7 @@ const CategoryFormPage = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/api/categories`);
+        const res = await api.get(`/api/categories`);
         setCategories(res.data);
       } catch (err) {
         console.error(err);
@@ -46,7 +46,7 @@ const CategoryFormPage = () => {
     if (isEditMode) {
       const fetchCurrentCategory = async () => {
         try {
-            const res = await axios.get(`${API_BASE_URL}/api/categories/${id}`);
+            const res = await api.get(`/api/categories/${id}`);
             setFormData({
                 name: res.data.name,
                 parentId: res.data.parentId ? res.data.parentId.toString() : ''
@@ -67,7 +67,7 @@ const CategoryFormPage = () => {
       try {
           setSpecsLoading(true);
           // Використовуємо той метод, що ви додали останнім: api/CategorySpecs/category/{id}
-          const res = await axios.get(`${API_BASE_URL}/api/CategorySpecs/category/${id}`);
+          const res = await api.get(`/api/CategorySpecs/category/${id}`);
           setSpecs(res.data);
       } catch (error) {
           console.error("Не вдалося завантажити характеристики", error);
@@ -87,11 +87,11 @@ const CategoryFormPage = () => {
     try {
       const config = { headers: { 'Content-Type': 'application/json' } };
       if (isEditMode) {
-        await axios.put(`${API_BASE_URL}/api/categories/${id}`, payload, config);
+        await api.put(`/api/categories/${id}`, payload, config);
         alert("Категорію оновлено!");
       } else {
         // При створенні нової - перекидаємо на редагування, щоб можна було додати спеки
-        const res = await axios.post(`${API_BASE_URL}/api/categories`, payload, config);
+        const res = await api.post(`/api/categories`, payload, config);
         const newId = res.data.id; 
         if(window.confirm("Категорію створено! Перейти до додавання характеристик?")) {
             navigate(`/admin/categories/edit/${newId}`);
@@ -99,8 +99,22 @@ const CategoryFormPage = () => {
             navigate('/admin/categories');
         }
       }
-    } catch (error: any) {
-      console.error("Помилка: " + (error.response?.data?.message || error.message));
+    } catch (error) {
+            let message = "Щось пішло не так";
+
+            // 3. Перевіряємо, чи це помилка Axios (від сервера)
+            if (axios.isAxiosError(error)) {
+                // Тепер TypeScript знає, що у error є .response
+                // Можна уточнити, що ми чекаємо { message: string } від бекенду
+                message = error.response?.data?.message || error.message;
+            } 
+            // 4. Перевіряємо, чи це звичайна помилка JS (напр. JSON.parse error)
+            else if (error instanceof Error) {
+                message = error.message;
+            }
+
+            console.error("Помилка: " + message);
+            alert("Помилка: " + message);
     }
   };
 
@@ -114,7 +128,7 @@ const CategoryFormPage = () => {
               CategoryId: parseInt(id!) // ID поточної категорії
           };
           
-          await axios.post(`${API_BASE_URL}/api/CategorySpecs`, payload);
+          await api.post(`/api/CategorySpecs`, payload);
           
           setNewSpecName(''); // Очистити поле
           fetchSpecs();       // Оновити список
@@ -128,7 +142,7 @@ const CategoryFormPage = () => {
       if(!window.confirm("Видалити цей шаблон?")) return;
       
       try {
-          await axios.delete(`${API_BASE_URL}/api/CategorySpecs/${specId}`);
+          await api.delete(`/api/CategorySpecs/${specId}`);
           fetchSpecs(); // Оновити список
       } catch (error) {
           console.error("Помилка видалення",error);

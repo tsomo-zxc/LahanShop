@@ -1,9 +1,52 @@
 ﻿using LahanShop.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace LahanShop.Data
 {
     public static class DbInitializer
+
     {
+        public static async Task SeedRolesAndAdminAsync(IServiceProvider serviceProvider)
+        {
+            // Отримуємо менеджери для користувачів та ролей
+            var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var userManager = serviceProvider.GetRequiredService<UserManager<User>>();
+
+            // 1. Створюємо ролі, якщо їх немає
+            string[] roleNames = { "Admin", "User" };
+            foreach (var roleName in roleNames)
+            {
+                var roleExist = await roleManager.RoleExistsAsync(roleName);
+                if (!roleExist)
+                {
+                    await roleManager.CreateAsync(new IdentityRole(roleName));
+                }
+            }
+
+            // 2. (Опціонально) Створюємо дефолтного адміна
+            // Це зручно, щоб одразу мати доступ до адмінки
+            var adminEmail = "admin@lahan.com";
+            var adminUser = await userManager.FindByEmailAsync(adminEmail);
+
+            if (adminUser == null)
+            {
+                var newAdmin = new User
+                {
+                    UserName = adminEmail,
+                    Email = adminEmail,
+                    FullName = "Головний Адмін",
+                    EmailConfirmed = true
+                };
+
+                // Пароль має бути складним (вимоги Identity)
+                var result = await userManager.CreateAsync(newAdmin, "AdminPass123!");
+
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(newAdmin, "Admin");
+                }
+            }
+        }
         public static void Initialize(AppDbContext context)
         {
             context.Database.EnsureCreated();

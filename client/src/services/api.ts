@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../constants';
-import type { ProductDto } from '../types';
+import type { Product } from '../types';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -10,7 +10,7 @@ const api = axios.create({
 });
 
 // Mock data for fallback (since localhost:5001 won't be reachable in this preview environment)
-const MOCK_PRODUCTS: ProductDto[] = [
+const MOCK_PRODUCTS: Product[] = [
   {
     id: 1,
     name: "Бездротові навушники Luxe",
@@ -18,7 +18,9 @@ const MOCK_PRODUCTS: ProductDto[] = [
     description: "Відчуйте чистий звук завдяки активному шумозаглушенню та 30 годинам автономної роботи. Створені для аудіофілів, які цінують стиль та якість.",
     categoryName: "Електроніка",
     specifications: "{\"Колір\": \"Сріблястий\", \"Вага\": \"250г\", \"Батарея\": \"30 Годин\", \"Зв'язок\": \"Bluetooth 5.2\"}",
-    images: [{ id: 101, url: "https://picsum.photos/800/800?random=1" }, { id: 102, url: "https://picsum.photos/800/800?random=2" }]
+    images: [{ id: 101, url: "https://picsum.photos/800/800?random=1" }, { id: 102, url: "https://picsum.photos/800/800?random=2" }],
+    stockQuantity: 1,
+    isAvailable: true
   },
   {
     id: 2,
@@ -27,7 +29,9 @@ const MOCK_PRODUCTS: ProductDto[] = [
     description: "Вічний дизайн із сапфіровим склом та ремінцем з натуральної шкіри. Водонепроникність до 50 метрів.",
     categoryName: "Аксесуари",
     specifications: "{\"Матеріал\": \"Нержавіюча сталь\", \"Ремінець\": \"Шкіра\", \"Водостійкість\": \"5ATM\"}",
-    images: [{ id: 201, url: "https://picsum.photos/800/800?random=3" }]
+    images: [{ id: 201, url: "https://picsum.photos/800/800?random=3" }],
+    stockQuantity: 1,
+    isAvailable: true
   },
   {
     id: 3,
@@ -36,7 +40,9 @@ const MOCK_PRODUCTS: ProductDto[] = [
     description: "Працюйте з повним комфортом завдяки підтримці попереку та дихаючому сітчастому матеріалу.",
     categoryName: "Меблі",
     specifications: "{\"Матеріал\": \"Сітка\", \"Колір\": \"Чорний\", \"Макс. навантаження\": \"150кг\"}",
-    images: [{ id: 301, url: "https://picsum.photos/800/800?random=4" }]
+    images: [{ id: 301, url: "https://picsum.photos/800/800?random=4" }],
+    stockQuantity: 1,
+    isAvailable: true
   },
   {
     id: 4,
@@ -45,14 +51,16 @@ const MOCK_PRODUCTS: ProductDto[] = [
     description: "Керуйте всім будинком за допомогою голосових команд. Сумісний з усіма основними смарт-пристроями.",
     categoryName: "Smart Home",
     specifications: "{\"Голосовий асистент\": \"Інтегрований\", \"Живлення\": \"USB-C\", \"Wifi\": \"WiFi 6\"}",
-    images: []
+    images: [],
+    stockQuantity: 1,
+    isAvailable: true
   }
 ];
 
 export const productService = {
-  getAll: async (): Promise<ProductDto[]> => {
+  getAll: async (): Promise<Product[]> => {
     try {
-      const response = await api.get<ProductDto[]>('/api/products');
+      const response = await api.get<Product[]>('/api/products');
       return response.data;
     } catch (error) {
       console.error(error);
@@ -60,9 +68,9 @@ export const productService = {
       return new Promise((resolve) => setTimeout(() => resolve(MOCK_PRODUCTS), 500));
     }
   },
-  getById: async (id: number): Promise<ProductDto | undefined> => {
+  getById: async (id: number): Promise<Product | undefined> => {
     try {
-      const response = await api.get<ProductDto>(`/api/products/${id}`);
+      const response = await api.get<Product>(`/api/products/${id}`);
       return response.data;
     } catch (error) {
        console.warn("API unreachable, returning mock data for demonstration.");

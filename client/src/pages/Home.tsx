@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../services/axiosInstance';
 import { FaChevronLeft, FaChevronRight, FaHome, FaAngleRight } from 'react-icons/fa';
 import { useSearchParams, Link } from 'react-router-dom'; 
 import type { Product } from '../types';
 import type {  Category } from '../types'; // Переконайтесь, що цей тип є
 import ProductCard from '../components/ProductCard';
-import { API_BASE_URL } from '../constants';
 
 interface PagedResponse {
   items: Product[];
@@ -44,7 +43,7 @@ const Home: React.FC = () => {
       }
 
       try {
-        const res = await axios.get<Category[]>(`${API_BASE_URL}/api/categories`);
+        const res = await api.get<Category[]>(`/api/categories`);
         const allCategories = res.data;
 
         const path: Category[] = [];
@@ -71,11 +70,11 @@ const Home: React.FC = () => {
       try {
         setLoading(true);
         
-        let url = `${API_BASE_URL}/api/products?page=${currentPage}&pageSize=${pageSize}`;
+        let url = `/api/products?page=${currentPage}&pageSize=${pageSize}`;
         if (searchTerm) url += `&searchTerm=${encodeURIComponent(searchTerm)}`;
         if (categoryId) url += `&categoryId=${categoryId}`;
 
-        const response = await axios.get<PagedResponse>(url);
+        const response = await api.get<PagedResponse>(url);
 
         setProducts(response.data.items);
         setTotalPages(response.data.totalPages);

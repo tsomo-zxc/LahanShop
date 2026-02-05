@@ -34,3 +34,15 @@ export interface Category {
   // Це поле ми заповнимо самі на фронтенді
   children?: Category[]; 
 }
+
+export interface CategorySpecTemplate {
+    id: number;
+    name: string;
+    categoryId: number;
+}
+
+export interface User {
+  email: string;
+  fullName: string;
+  role: string; // "Admin" або "User"
+}

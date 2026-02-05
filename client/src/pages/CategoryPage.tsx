@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/axiosInstance';
 import ProductCard from '../components/ProductCard';
 import type { Product } from '../types';
-import { API_BASE_URL } from '../constants';
 import { FaChevronLeft, FaChevronRight, FaHome, FaAngleRight } from 'react-icons/fa';
 import type { Category } from '../types';
 
@@ -39,7 +38,7 @@ const CategoryPage = () => {
       if (!id) return;
       try {
         // Завантажуємо всі категорії
-        const res = await axios.get<Category[]>(`${API_BASE_URL}/api/categories`);
+        const res = await api.get<Category[]>(`/api/categories`);
         const allCategories = res.data;
 
         const path: Category[] = [];
@@ -67,13 +66,13 @@ const CategoryPage = () => {
       if (!id) return;
       try {
         setLoading(true);
-        let url = `${API_BASE_URL}/api/products?categoryId=${id}&page=${currentPage}&pageSize=${pageSize}`;
+        let url = `/api/products?categoryId=${id}&page=${currentPage}&pageSize=${pageSize}`;
         
         if (searchTerm) {
             url += `&searchTerm=${encodeURIComponent(searchTerm)}`;
         }
 
-        const response = await axios.get<PagedResponse>(url);
+        const response = await api.get<PagedResponse>(url);
         
         setProducts(response.data.items);
         setTotalPages(response.data.totalPages);

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import type { ProductDto, ProductImageDto } from '../types';
+import type { Product, ProductImage } from '../types';
 import { productService } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { CURRENCY_FORMATTER, API_BASE_URL } from '../constants';
@@ -11,7 +11,7 @@ const ProductDetails: React.FC = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   
-  const [product, setProduct] = useState<ProductDto | null>(null);
+  const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedImage, setSelectedImage] = useState<string>('');
   
@@ -91,7 +91,7 @@ const ProductDetails: React.FC = () => {
              {/* Thumbnail Strip */}
              {product.images.length > 1 && (
                <div className="flex space-x-4 overflow-x-auto pb-2 w-full max-w-lg">
-                 {product.images.map((img: ProductImageDto) => {
+                 {product.images.map((img: ProductImage) => {
                    const fullUrl = img.url.startsWith('http') ? img.url : `${API_BASE_URL}${img.url}`;
                    return (
                     <button

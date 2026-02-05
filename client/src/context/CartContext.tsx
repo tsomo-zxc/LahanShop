@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import type { CartItem, ProductDto } from '../types';
+import type { CartItem, Product } from '../types';
 import { toast } from 'react-toastify';
 
 interface CartState {
@@ -9,7 +9,7 @@ interface CartState {
 }
 
 type CartAction =
-  | { type: 'ADD_ITEM'; payload: ProductDto }
+  | { type: 'ADD_ITEM'; payload: Product }
   | { type: 'REMOVE_ITEM'; payload: number }
   | { type: 'UPDATE_QUANTITY'; payload: { id: number; quantity: number } }
   | { type: 'CLEAR_CART' };
@@ -80,7 +80,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 };
 
 interface CartContextType extends CartState {
-  addToCart: (product: ProductDto) => void;
+  addToCart: (product: Product) => void;
   removeFromCart: (id: number) => void;
   updateQuantity: (id: number, quantity: number) => void;
   clearCart: () => void;
@@ -98,7 +98,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('cart', JSON.stringify(state));
   }, [state]);
 
-  const addToCart = (product: ProductDto) => dispatch({ type: 'ADD_ITEM', payload: product });
+  const addToCart = (product: Product) => dispatch({ type: 'ADD_ITEM', payload: product });
   const removeFromCart = (id: number) => dispatch({ type: 'REMOVE_ITEM', payload: id });
   const updateQuantity = (id: number, quantity: number) => dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } });
   const clearCart = () => dispatch({ type: 'CLEAR_CART' });

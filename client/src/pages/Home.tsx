@@ -116,7 +116,7 @@ const Home: React.FC = () => {
 
   return (
     // 👇 ЗМІНЕНО pt-16 на pt-40 (для високого Navbar)
-    <div className="container mx-auto px-4 py-4 pt-8 min-h-screen flex flex-col">
+    <div className="container mx-auto px-4 py-4 pt-16 min-h-screen flex flex-col">
       
       {/* Хлібні крихти (Показуємо тільки якщо ми в категорії) */}
       {breadcrumbs.length > 0 && (

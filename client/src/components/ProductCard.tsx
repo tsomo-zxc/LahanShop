@@ -89,19 +89,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             {CURRENCY_FORMATTER.format(product.price)}
           </span>
           
-          {/* 5. Кнопка: Змінює колір і блокується */}
-          <button 
-            onClick={handleAddToCart}
-            disabled={isOutOfStock}
-            className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300
-                ${isOutOfStock 
-                    ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-blue-600 hover:text-white'
-                }`}
-            title={isOutOfStock ? "Товар закінчився" : "Додати в кошик"}
-          > 
-            <span><FaShoppingCart size={16}  /></span>            
-          </button>
+          
+               
+          
+          {product.stockQuantity > 0 ? (
+              <button 
+                onClick={handleAddToCart}
+                className="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition shadow-md"
+                title="Додати в кошик"
+              >
+                  <FaShoppingCart />
+              </button>
+          ) : (
+              <span className="text-red-500 text-sm font-medium">Немає в наявності</span>
+          )}      
         </div>
       </div>
     </div>

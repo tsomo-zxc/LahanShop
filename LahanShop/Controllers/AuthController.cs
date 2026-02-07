@@ -9,7 +9,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LahanShop.Data
+namespace LahanShop.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

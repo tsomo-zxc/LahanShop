@@ -15,6 +15,7 @@ import { AuthProvider } from './context/AuthContext.tsx'
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import CartPage from './pages/CartPage';
 
 const App: React.FC = () => {
   return (
@@ -30,9 +31,10 @@ const App: React.FC = () => {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/product/:id" element={<ProductDetails />} />
               <Route path="/category/:id" element={<CategoryPage />} />
-              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/cart" element={<CartPage />} />
 
               <Route element={<ProtectedRoute requireAdmin={true} />}>
+              <Route path="/admin" element={<AdminPage />} />
                 <Route path="/admin/products/new" element={<ProductFormPage />} />
                 <Route path="/admin/products/edit/:id" element={<ProductFormPage />} />
                 <Route path="/admin/categories" element={<AdminCategoriesPage />} />

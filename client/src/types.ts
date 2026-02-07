@@ -15,9 +15,6 @@ export interface Product {
   isAvailable: boolean;
 }
 
-export interface CartItem extends Product {
-  quantity: number;
-}
 
 export interface ApiResponse<T> {
   data: T;

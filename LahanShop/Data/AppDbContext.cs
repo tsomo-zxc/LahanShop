@@ -16,7 +16,7 @@ namespace LahanShop.Data
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<ProductImage> ProductImages { get; set; }
-        public DbSet<CategorySpecification> CategorySpecifications { get; set; }
+        public DbSet<CategorySpecification> CategorySpecifications { get; set; }        
 
     }
 }

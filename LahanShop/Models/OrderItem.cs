@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace LahanShop.Models
 {
@@ -17,6 +18,7 @@ namespace LahanShop.Models
 
         // Зв'язок з Замовленням (Зворотній зв'язок)
         public int OrderId { get; set; }
+        [JsonIgnore]
         public Order? Order { get; set; }
     }
 }

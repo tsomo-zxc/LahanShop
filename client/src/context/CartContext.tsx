@@ -1,119 +1,121 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import type { ReactNode } from 'react';
-import type { CartItem, Product } from '../types';
-import { toast } from 'react-toastify';
+// eslint-disable-next-line react-refresh/only-export-components
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode} from 'react';
+import type { Product } from '../types';
 
-interface CartState {
-  items: CartItem[];
-  total: number;
+// Спрощена модель товару саме для кошика
+export interface CartItem {
+  productId: number;
+  name: string;
+  price: number;
+  imageUrl?: string;
+  quantity: number;
+  stockQuantity: number; // Щоб не дати замовити більше, ніж є
 }
 
-type CartAction =
-  | { type: 'ADD_ITEM'; payload: Product }
-  | { type: 'REMOVE_ITEM'; payload: number }
-  | { type: 'UPDATE_QUANTITY'; payload: { id: number; quantity: number } }
-  | { type: 'CLEAR_CART' };
-
-const initialState: CartState = {
-  items: [],
-  total: 0,
-};
-
-const calculateTotal = (items: CartItem[]) => {
-  return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-};
-
-const cartReducer = (state: CartState, action: CartAction): CartState => {
-  switch (action.type) {
-    case 'ADD_ITEM': {
-      const existingItemIndex = state.items.findIndex(item => item.id === action.payload.id);
-      let newItems;
-
-      if (existingItemIndex > -1) {
-        newItems = [...state.items];
-        newItems[existingItemIndex] = {
-            ...newItems[existingItemIndex],
-            quantity: newItems[existingItemIndex].quantity + 1
-        };        
-        toast.info(`Кількість "${action.payload.name}" збільшено`);
-      } else {
-        newItems = [...state.items, { ...action.payload, quantity: 1 }];
-        toast.success(`"${action.payload.name}" додано до кошика`);
-      }
-
-      return {
-        ...state,
-        items: newItems,
-        total: calculateTotal(newItems),
-      };
-    }
-    case 'REMOVE_ITEM': {
-      const newItems = state.items.filter(item => item.id !== action.payload);
-      return {
-        ...state,
-        items: newItems,
-        total: calculateTotal(newItems),
-      };
-    }
-    case 'UPDATE_QUANTITY': {
-      const { id, quantity } = action.payload;
-      if (quantity < 1) return state; 
-      
-      const newItems = state.items.map(item => 
-        item.id === id ? { ...item, quantity } : item
-      );
-      
-      return {
-        ...state,
-        items: newItems,
-        total: calculateTotal(newItems),
-      };
-    }
-    case 'CLEAR_CART':
-      return {
-        items: [],
-        total: 0,
-      };
-    default:
-      return state;
-  }
-};
-
-interface CartContextType extends CartState {
+interface CartContextType {
+  items: CartItem[];
   addToCart: (product: Product) => void;
-  removeFromCart: (id: number) => void;
-  updateQuantity: (id: number, quantity: number) => void;
+  removeFromCart: (productId: number) => void;
+  updateQuantity: (productId: number, quantity: number) => void;
   clearCart: () => void;
+  totalPrice: number;
+  totalItems: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(cartReducer, initialState, (initial) => {
-    const persisted = localStorage.getItem('cart');
-    return persisted ? JSON.parse(persisted) : initial;
+export const CartProvider = ({ children }: { children: ReactNode }) => {
+  // 1. Завантажуємо кошик з LocalStorage при старті
+  const [items, setItems] = useState<CartItem[]>(() => {
+    try {
+      const stored = localStorage.getItem('cart');
+      if (!stored) return [];
+
+      const parsed = JSON.parse(stored);
+      
+      // 👇 ГОЛОВНЕ ВИПРАВЛЕННЯ:
+      // Перевіряємо, чи це ДІЙСНО масив. Якщо ні — повертаємо пустий масив.
+      return Array.isArray(parsed) ? parsed : [];
+      
+    } catch (error) {
+      console.error("Помилка читання кошика", error);
+      return [];
+    }
   });
 
+  // 2. Авто-збереження при будь-якій зміні
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(state));
-  }, [state]);
+    localStorage.setItem('cart', JSON.stringify(items));
+  }, [items]);
 
-  const addToCart = (product: Product) => dispatch({ type: 'ADD_ITEM', payload: product });
-  const removeFromCart = (id: number) => dispatch({ type: 'REMOVE_ITEM', payload: id });
-  const updateQuantity = (id: number, quantity: number) => dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } });
-  const clearCart = () => dispatch({ type: 'CLEAR_CART' });
+  // --- ЛОГІКА ---
+
+  const addToCart = (product: Product) => {
+    setItems(currentItems => {
+      const existingItem = currentItems.find(item => item.productId === product.id);
+
+      if (existingItem) {
+        // Якщо товар вже є, збільшуємо кількість (але не більше ніж на складі)
+        if (existingItem.quantity >= product.stockQuantity) {
+            alert("Більше немає в наявності!");
+            return currentItems;
+        }
+        return currentItems.map(item =>
+          item.productId === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      } else {
+        // Якщо немає - додаємо новий
+        return [...currentItems, {
+          productId: product.id,
+          name: product.name,
+          price: product.price,
+          imageUrl: product.images && product.images.length > 0 ? product.images[0].url : undefined,
+          quantity: 1,
+          stockQuantity: product.stockQuantity
+        }];
+      }
+    });
+  };
+
+  const removeFromCart = (productId: number) => {
+    setItems(currentItems => currentItems.filter(item => item.productId !== productId));
+  };
+
+  const updateQuantity = (productId: number, quantity: number) => {
+    if (quantity < 1) {
+        removeFromCart(productId);
+        return;
+    }
+    setItems(currentItems =>
+      currentItems.map(item =>
+        item.productId === productId
+            // Перевіряємо, чи не перевищує ліміт складу
+          ? { ...item, quantity: Math.min(quantity, item.stockQuantity) } 
+          : item
+      )
+    );
+  };
+
+  const clearCart = () => {
+    setItems([]);
+  };
+
+  // Підрахунки
+  const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ ...state, addToCart, removeFromCart, updateQuantity, clearCart }}>
+    <CartContext.Provider value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, totalPrice, totalItems }}>
       {children}
     </CartContext.Provider>
   );
 };
-// eslint-disable-next-line react-refresh/only-export-components
+
 export const useCart = () => {
   const context = useContext(CartContext);
-  if (!context) {
-    throw new Error('useCart must be used within a CartProvider');
-  }
+  if (!context) throw new Error('useCart must be used within a CartProvider');
   return context;
 };

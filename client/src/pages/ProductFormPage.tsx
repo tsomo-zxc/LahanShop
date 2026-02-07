@@ -176,7 +176,7 @@ const ProductFormPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 pt-24 max-w-4xl">
+    <div className="container mx-auto px-4 py-8 pt-16 max-w-4xl">
         <div className="mb-6">
         <Link to="/admin" className="text-gray-600 hover:text-blue-600 flex items-center gap-2 font-medium">
             <FaArrowLeft /> Назад до Продуктів

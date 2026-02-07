@@ -116,7 +116,7 @@ const CategoryPage = () => {
     : currentCategoryName || "Категорія";
 
   return (
-    <div className="container mx-auto px-4 py-8 pt-8 min-h-screen flex flex-col">    
+    <div className="container mx-auto px-4 py-16 pt-8 min-h-screen flex flex-col">    
       
 
       <div className="text-center mb-4">

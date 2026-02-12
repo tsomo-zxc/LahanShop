@@ -43,3 +43,27 @@ export interface User {
   fullName: string;
   role: string; // "Admin" або "User"
 }
+export interface CartItem {
+  productId: number;
+  name: string;
+  price: number;
+  imageUrl?: string;
+  quantity: number;
+  stockQuantity: number; // Щоб не дати замовити більше, ніж є
+}
+
+export interface OrderItemDto {
+  productId: number;
+  productName: string;
+  quantity: number;
+  price: number;
+  imageUrl?: string;
+}
+export interface OrderDto {
+  id: number;
+  orderDate: string; // Дати з JSON завжди приходять як стрічки
+  status: string;    // "New", "Processing" тощо
+  totalAmount: number;
+  address: string;
+  items: OrderItemDto[];
+}

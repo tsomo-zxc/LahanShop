@@ -47,4 +47,9 @@ namespace LahanShop.DTOs
         public decimal Price { get; set; } // Ціна на момент покупки
         public string? ImageUrl { get; set; }
     }
+
+    public class UpdateStatusDto
+    {
+        public string Status { get; set; } = string.Empty;
+    }
 }

@@ -67,7 +67,7 @@ const ProductDetails: React.FC = () => {
   if (!product) return null;
 
   return (
-    <div className="pb-12">
+    <div className="pb-12 pt-16">
       <button 
         onClick={() => navigate(-1)} 
         className="flex items-center text-gray-500 hover:text-blue-600 mb-6 transition-colors"
@@ -76,6 +76,7 @@ const ProductDetails: React.FC = () => {
       </button>
 
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        
         <div className="grid grid-cols-1 lg:grid-cols-2">
           
           {/* Left Side: Gallery */}

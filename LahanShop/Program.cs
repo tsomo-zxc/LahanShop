@@ -1,4 +1,4 @@
-using LahanShop.Data;
+п»їusing LahanShop.Data;
 using LahanShop.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -13,7 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
-    // Дозволяємо приймати "name" замість "Name" (ігноруємо регістр при вході)
+    // Р”РѕР·РІРѕР»СЏС”РјРѕ РїСЂРёР№РјР°С‚Рё "name" Р·Р°РјС–СЃС‚СЊ "Name" (С–РіРЅРѕСЂСѓС”РјРѕ СЂРµРіС–СЃС‚СЂ РїСЂРё РІС…РѕРґС–)
     options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
 });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -22,17 +22,17 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "LahanShop API", Version = "v1" });
 
-    // 1. Визначаємо схему безпеки (кажемо Swagger-у, що ми юзаємо Bearer токен)
+    // 1. Р’РёР·РЅР°С‡Р°С”РјРѕ СЃС…РµРјСѓ Р±РµР·РїРµРєРё (РєР°Р¶РµРјРѕ Swagger-Сѓ, С‰Рѕ РјРё СЋР·Р°С”РјРѕ Bearer С‚РѕРєРµРЅ)
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "Введіть токен авторизації у форматі: Bearer {ваш_токен}",
+        Description = "Р’РІРµРґС–С‚СЊ С‚РѕРєРµРЅ Р°РІС‚РѕСЂРёР·Р°С†С–С— Сѓ С„РѕСЂРјР°С‚С–: Bearer {РІР°С€_С‚РѕРєРµРЅ}",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
 
-    // 2. Додаємо вимогу безпеки (застосовуємо схему до всіх методів)
+    // 2. Р”РѕРґР°С”РјРѕ РІРёРјРѕРіСѓ Р±РµР·РїРµРєРё (Р·Р°СЃС‚РѕСЃРѕРІСѓС”РјРѕ СЃС…РµРјСѓ РґРѕ РІСЃС–С… РјРµС‚РѕРґС–РІ)
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -89,7 +89,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactApp", policyBuilder =>
     {
-        policyBuilder.WithOrigins("http://localhost:3000","http://localhost:5173") // Адреса майбутнього React-додатка
+        policyBuilder.WithOrigins("http://localhost:3000","http://localhost:5173") // РђРґСЂРµСЃР° РјР°Р№Р±СѓС‚РЅСЊРѕРіРѕ React-РґРѕРґР°С‚РєР°
                      .AllowAnyHeader()
                      .AllowAnyMethod();
     });
@@ -104,7 +104,13 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "LahanShop API v1");
+
+        // рџ‘‡ РћР¦Р•Р™ Р РЇР”РћРљ Р РћР‘РРўР¬ РњРђР“Р†Р®
+        c.EnablePersistAuthorization();
+    });
 }
 
 using (var scope = app.Services.CreateScope())
@@ -112,13 +118,13 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
-        // Викликаємо наш метод створення ролей
+        // Р’РёРєР»РёРєР°С”РјРѕ РЅР°С€ РјРµС‚РѕРґ СЃС‚РІРѕСЂРµРЅРЅСЏ СЂРѕР»РµР№
         await LahanShop.Data.DbInitializer.SeedRolesAndAdminAsync(services);
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Сталася помилка під час створення ролей");
+        logger.LogError(ex, "РЎС‚Р°Р»Р°СЃСЏ РїРѕРјРёР»РєР° РїС–Рґ С‡Р°СЃ СЃС‚РІРѕСЂРµРЅРЅСЏ СЂРѕР»РµР№");
     }
 }
 app.UseHttpsRedirection();
@@ -148,7 +154,7 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Сталася помилка при заповненні бази даних.");
+        logger.LogError(ex, "РЎС‚Р°Р»Р°СЃСЏ РїРѕРјРёР»РєР° РїСЂРё Р·Р°РїРѕРІРЅРµРЅРЅС– Р±Р°Р·Рё РґР°РЅРёС….");
     }
 }
 

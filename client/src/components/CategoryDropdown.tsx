@@ -82,7 +82,7 @@ const CategoryDropdown = () => {
   };
 
   return (
-    <div className="relative pb-2" 
+    <div className="relative" 
          onMouseEnter={() => setIsOpen(true)} 
          onMouseLeave={() => setIsOpen(false)}>
       
@@ -92,7 +92,7 @@ const CategoryDropdown = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%-5px)] left-0 w-72 bg-white shadow-2xl rounded-lg border border-gray-100 py-3 z-50">
+        <div className="absolute top-[calc(100%)] left-0 w-72 bg-white shadow-2xl rounded-lg border border-gray-100 py-3 z-50">
           {loading ? (
             <div className="px-5 py-4 text-gray-500 text-center">Завантаження...</div>
           ) : (

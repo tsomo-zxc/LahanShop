@@ -19,7 +19,15 @@ namespace LahanShop.Controllers
         {
             _context = context;
         }
-
+        // GET: api/orders/count-new
+        [HttpGet("count-new")]
+        [Authorize(Roles = "Admin")] // Тільки для адміна
+        public async Task<ActionResult<int>> GetNewOrdersCount()
+        {
+            // Рахуємо скільки замовлень мають статус 'New' (0)
+            var count = await _context.Orders.CountAsync(o => o.Status == OrderStatus.New);
+            return Ok(count);
+        }
         // POST: api/orders
         [HttpPost]
         [Authorize]
@@ -96,6 +104,7 @@ namespace LahanShop.Controllers
 
             var ordersDtos = orders.Select(o => new OrderDto
             {
+                Id = o.Id,
                 OrderDate = o.OrderDate,
                 TotalAmount = o.TotalAmount,
                 Status = o.Status.ToString(),
@@ -114,5 +123,55 @@ namespace LahanShop.Controllers
 
             return Ok(ordersDtos);
             }
+        [HttpGet("all")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<IEnumerable<OrderDto>>> GetAllOrders()
+        {
+            var orders = await _context.Orders
+                .Include(o => o.Items)
+                .ThenInclude(oi => oi.Product)
+                .OrderByDescending(o => o.OrderDate) // Спочатку нові
+                .ToListAsync();
+
+            // Мапимо в DTO (можна винести в окремий метод, щоб не дублювати код)
+            var ordersDtos = orders.Select(o => new OrderDto
+            {
+                Id = o.Id,
+                OrderDate = o.OrderDate,
+                TotalAmount = o.TotalAmount,
+                Status = o.Status.ToString(),
+                Address = o.Address,
+                Items = o.Items.Select(i => new OrderItemDto
+                {
+                    ProductId = i.ProductId,
+                    ProductName = i.Product?.Name ?? "Товар видалено",
+                    Quantity = i.Quantity,
+                    Price = i.Price,
+                    ImageUrl = i.Product?.Images?.FirstOrDefault()?.Url
+                }).ToList()
+            });
+
+            return Ok(ordersDtos);
+        }
+
+        // 2. Змінити статус замовлення
+        [HttpPut("{id}/status")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateStatusDto dto)
+        {
+            var order = await _context.Orders.FindAsync(id);
+
+            if (order == null) return NotFound("Замовлення не знайдено");
+
+            // Спробуємо перетворити рядок (напр. "Shipped") в Enum
+            if (Enum.TryParse(dto.Status, out OrderStatus newStatus))
+            {
+                order.Status = newStatus;
+                await _context.SaveChangesAsync();
+                return Ok(new { Message = "Статус оновлено", Status = order.Status.ToString() });
+            }
+
+            return BadRequest("Невірний статус");
+        }
     }
 }

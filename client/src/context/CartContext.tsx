@@ -2,16 +2,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode} from 'react';
 import type { Product } from '../types';
+import type { CartItem } from '../types';
 
-// Спрощена модель товару саме для кошика
-export interface CartItem {
-  productId: number;
-  name: string;
-  price: number;
-  imageUrl?: string;
-  quantity: number;
-  stockQuantity: number; // Щоб не дати замовити більше, ніж є
-}
 
 interface CartContextType {
   items: CartItem[];

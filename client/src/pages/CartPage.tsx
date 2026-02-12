@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { FaTrash, FaMinus, FaPlus, FaArrowLeft } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 const CartPage = () => {
   const { items, removeFromCart, updateQuantity, totalPrice, clearCart } = useCart();
+  const navigate = useNavigate();
 
   if (items.length === 0) {
     return (
@@ -107,7 +109,7 @@ const CartPage = () => {
                 </div>
 
                 <button 
-                    onClick={() => alert("Перехід до оформлення замовлення...")}
+                    onClick={() => navigate('/checkout')}
                     className="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 shadow-md transition transform active:scale-[0.98]"
                 >
                     Оформити замовлення

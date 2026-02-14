@@ -15,10 +15,13 @@ import {
 } from 'react-icons/fa';
 import CategoryDropdown from './CategoryDropdown';
 
+import { getNewOrdersCount } from '../services/orders';
+
 const Navbar = () => {
   const { user, logout, isAuthenticated, isAdmin } = useAuth();
   const { totalItems } = useCart();
   const navigate = useNavigate();
+  const [newOrdersCount, setNewOrdersCount] = useState(0);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -26,6 +29,28 @@ const Navbar = () => {
   // Ref для відстеження кліків поза меню
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+
+    const fetchCount = async () => {
+      if (isAuthenticated && isAdmin) {
+        try {
+          const count = await getNewOrdersCount();
+          setNewOrdersCount(count);
+        } catch (error) {
+          console.error("Не вдалося отримати лічильник замовлень");
+        }
+      }
+    };
+
+    if (isAuthenticated && isAdmin) {
+      fetchCount(); // Перший запуск одразу
+      // Запускаємо перевірку кожні 30 секунд (щоб бачити нові замовлення без оновлення сторінки)
+      interval = setInterval(fetchCount, 30000);
+    }
+
+    return () => clearInterval(interval); // Чистимо таймер при виході
+  }, [isAuthenticated, isAdmin]);
   // Закриваємо меню при кліку поза ним
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -135,12 +160,20 @@ const Navbar = () => {
                         {/* Кнопка "Всі замовлення" */}
                         <Link
                           to="/admin/orders"
-                          className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                          className="flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                           onClick={closeMenu}
                         >
-                          {/* Іконка ClipboardList краще підходить для списку замовлень */}
-                          <FaClipboardList className="mr-3 text-blue-500" />
-                          Управління замовленнями
+                          <div className="flex items-center">
+                            <FaTools className="mr-3 text-gray-400" />
+                            Управління замовленнями
+                          </div>
+
+                          {/* 👇 ЧЕРВОНИЙ КРУЖЕЧОК (BADGE) */}
+                          {newOrdersCount > 0 && (
+                            <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm animate-pulse">
+                              +{newOrdersCount}
+                            </span>
+                          )}
                         </Link>
 
                         {/* Кнопка "Головна панель" (якщо треба повернутись до створення товарів) */}
@@ -157,7 +190,7 @@ const Navbar = () => {
                         </p>
 
                       </>
-                      
+
                     )}
 
                     <Link

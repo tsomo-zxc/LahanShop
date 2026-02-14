@@ -5,8 +5,9 @@ import { API_BASE_URL } from '../constants'; // Переконайтесь, що
 const api = axios.create({
     baseURL: API_BASE_URL,
     headers: {
-        'Content-Type': 'application/json',
-    },
+    'Content-Type': 'application/json',    
+    'ngrok-skip-browser-warning': 'true' 
+  },
 });
 
 // 2. ПЕРЕХОПЛЮВАЧ ЗАПИТІВ (Request Interceptor)

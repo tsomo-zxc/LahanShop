@@ -9,30 +9,29 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ==============================
+// 1. НАЛАШТУВАННЯ СЕРВІСІВ
+// ==============================
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
-    // Дозволяємо приймати "name" замість "Name" (ігноруємо регістр при вході)
     options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
 });
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "LahanShop API", Version = "v1" });
 
-    // 1. Визначаємо схему безпеки (кажемо Swagger-у, що ми юзаємо Bearer токен)
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "Введіть токен авторизації у форматі: Bearer {ваш_токен}",
+        Description = "Введіть токен у форматі: Bearer {ваш_токен}",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
 
-    // 2. Додаємо вимогу безпеки (застосовуємо схему до всіх методів)
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -50,12 +49,13 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<LahanShop.Data.AppDbContext>(options =>
+builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
+// Налаштування Identity (паролі тощо)
 builder.Services.AddIdentity<User, IdentityRole>(options =>
 {
-    options.Password.RequireDigit = false; 
+    options.Password.RequireDigit = false;
     options.Password.RequireLowercase = false;
     options.Password.RequireUppercase = false;
     options.Password.RequireNonAlphanumeric = false;
@@ -64,10 +64,12 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
 
+// Налаштування JWT
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme; // Додано для надійності
 })
 .AddJwtBearer(options =>
 {
@@ -84,78 +86,71 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-
+// Налаштування CORS (Тут ми створюємо політику, але ще не застосовуємо)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactApp", policyBuilder =>
     {
-        policyBuilder.WithOrigins("http://localhost:3000","http://localhost:5173") // Адреса майбутнього React-додатка
+        policyBuilder.WithOrigins("http://localhost:3000", "http://localhost:5173") // Vite порти
                      .AllowAnyHeader()
-                     .AllowAnyMethod();
+                     .AllowAnyOrigin()
+                     .AllowAnyMethod()
+                     /*.AllowCredentials()*/; // Важливо, якщо будеш передавати куки або auth-заголовки
     });
 });
 
-
 var app = builder.Build();
 
+// ==============================
+// 2. ІНІЦІАЛІЗАЦІЯ ДАНИХ (SEEDING)
+// ==============================
+// Краще робити це тут, перед запуском пайплайну
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<AppDbContext>();
+        // Спочатку ініціалізація структури/товарів
+        LahanShop.Data.DbInitializer.Initialize(context);
 
+        // Потім ролі та адмін (асинхронно)
+        await LahanShop.Data.DbInitializer.SeedRolesAndAdminAsync(services);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Сталася помилка під час ініціалізації бази даних.");
+    }
+}
 
-// Configure the HTTP request pipeline.
+// ==============================
+// 3. HTTP PIPELINE (ПОРЯДОК ВАЖЛИВИЙ!)
+// ==============================
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "LahanShop API v1");
-
-        // 👇 ОЦЕЙ РЯДОК РОБИТЬ МАГІЮ
-        c.EnablePersistAuthorization();
+        // c.EnablePersistAuthorization(); // Увімкни, якщо твоя версія Swagger це підтримує
     });
 }
 
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        // Викликаємо наш метод створення ролей
-        await LahanShop.Data.DbInitializer.SeedRolesAndAdminAsync(services);
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Сталася помилка під час створення ролей");
-    }
-}
 app.UseHttpsRedirection();
 
-app.UseCors("AllowAll");
-
-app.UseAuthentication(); 
-app.UseAuthorization();
-
-app.UseCors("ReactApp");
+// Статичні файли (щоб картинки працювали) мають йти ДО авторизації
 app.UseStaticFiles();
+
 app.UseRouting();
 
-app.UseCors("AllowReactApp");
-app.UseAuthorization();
+// CORS має бути МІЖ UseRouting та UseAuthentication
+app.UseCors("ReactApp");
+
+app.UseAuthentication(); // Хто ти?
+app.UseAuthorization();  // Що тобі можна?
 
 app.MapControllers();
-
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<LahanShop.Data.AppDbContext>();
-        LahanShop.Data.DbInitializer.Initialize(context);
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Сталася помилка при заповненні бази даних.");
-    }
-}
 
 app.Run();

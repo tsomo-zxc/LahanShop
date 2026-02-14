@@ -91,11 +91,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactApp", policyBuilder =>
     {
-        policyBuilder.WithOrigins("http://localhost:3000", "http://localhost:5173") // Vite порти
-                     .AllowAnyHeader()
-                     .AllowAnyOrigin()
+        policyBuilder.WithOrigins("https://lahan-shop.vercel.app/") // Vite порти
+                     .AllowAnyHeader()                     
                      .AllowAnyMethod()
-                     /*.AllowCredentials()*/; // Важливо, якщо будеш передавати куки або auth-заголовки
+                     .AllowCredentials(); // Важливо, якщо будеш передавати куки або auth-заголовки
     });
 });
 

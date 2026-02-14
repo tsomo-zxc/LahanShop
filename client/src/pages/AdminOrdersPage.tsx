@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getAllOrdersAdmin, updateOrderStatus} from '../services/orders';
 import type { OrderDto } from '../types';
-import { FaBox, FaCheck, FaTruck, FaClock, FaTimes, FaSearch } from 'react-icons/fa';
+import {  FaSearch } from 'react-icons/fa';
 
 const AdminOrdersPage = () => {
   const [orders, setOrders] = useState<OrderDto[]>([]);

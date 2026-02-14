@@ -1,5 +1,4 @@
 import api from './axiosInstance';
-import type { CartItem } from '../types';
 import type {OrderDto} from '../types';
 
 // Типи даних (мають співпадати з DTO на бекенді)

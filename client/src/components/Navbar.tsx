@@ -10,8 +10,7 @@ import {
   FaTools,
   FaSearch,
   FaBoxOpen,
-  FaUserPlus,
-  FaClipboardList
+  FaUserPlus  
 } from 'react-icons/fa';
 import CategoryDropdown from './CategoryDropdown';
 

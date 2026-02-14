@@ -1,5 +1,5 @@
 // eslint-disable-next-line react-refresh/only-export-components
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import  { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode} from 'react';
 import type { Product } from '../types';
 import type { CartItem } from '../types';

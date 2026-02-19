@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Link } from 'react-router-dom';
 import type { Category } from '../types';
 import { FaBars, FaChevronRight } from 'react-icons/fa';
-import { API_BASE_URL } from '../constants';
+import api from '../services/axiosInstance';
 
 // --- РЕКУРСИВНИЙ КОМПОНЕНТ ---
 const CategoryItem = ({ category }: { category: Category }) => {
@@ -53,7 +52,7 @@ const CategoryDropdown = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/categories`);
+        const response = await api.get(`/api/categories`);
         const tree = buildCategoryTree(response.data);
         setCategories(tree);
       } catch (error) {

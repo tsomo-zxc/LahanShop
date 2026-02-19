@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import api from '../services/axiosInstance';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { API_BASE_URL } from '../constants';
 import { FaEdit, FaTrash, FaPlus, FaArrowLeft } from 'react-icons/fa';
 import type { Category } from '../types';
 
@@ -12,7 +11,7 @@ const AdminCategoriesPage = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await api.get(`${API_BASE_URL}/api/categories`);
+      const res = await api.get(`/api/categories`);
       setCategories(res.data);
     } catch (error) {
       console.error("Помилка:", error);
@@ -28,7 +27,7 @@ const AdminCategoriesPage = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm('Видалити цю категорію?')) {
       try {
-        await api.delete(`${API_BASE_URL}/api/categories/${id}`);
+        await api.delete(`/api/categories/${id}`);
         fetchCategories();
       } catch (error) { 
         

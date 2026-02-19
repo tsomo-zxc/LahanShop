@@ -1,12 +1,12 @@
 import axios from 'axios';
-import { API_BASE_URL } from '../constants'; // Переконайтесь, що шлях правильний
+ 
 
 // 1. Створюємо "налаштований" екземпляр axios
 const api = axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-    'Content-Type': 'application/json',    
-    'ngrok-skip-browser-warning': 'true' 
+  // Vite сам підставить потрібне посилання залежно від того, як запущений проєкт
+  baseURL: import.meta.env.VITE_API_URL, 
+  headers: {
+    'Content-Type': 'application/json'
   },
 });
 

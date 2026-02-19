@@ -91,10 +91,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactApp", policyBuilder =>
     {
-        policyBuilder.WithOrigins("https://lahan-shop.vercel.app/") // Vite порти
+        policyBuilder.WithOrigins("https://lahan-shop.vercel.app", "http://localhost:5173") // Vite порти
                      .AllowAnyHeader()                     
                      .AllowAnyMethod()
-                     .AllowCredentials(); // Важливо, якщо будеш передавати куки або auth-заголовки
+                     .AllowCredentials(); 
     });
 });
 
@@ -127,15 +127,15 @@ using (var scope = app.Services.CreateScope())
 // 3. HTTP PIPELINE (ПОРЯДОК ВАЖЛИВИЙ!)
 // ==============================
 
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "LahanShop API v1");
         // c.EnablePersistAuthorization(); // Увімкни, якщо твоя версія Swagger це підтримує
     });
-}
+//}
 
 app.UseHttpsRedirection();
 

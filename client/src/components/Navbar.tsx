@@ -10,7 +10,7 @@ import {
   FaTools,
   FaSearch,
   FaBoxOpen,
-  FaUserPlus  
+  FaUserPlus
 } from 'react-icons/fa';
 import CategoryDropdown from './CategoryDropdown';
 
@@ -75,41 +75,44 @@ const Navbar = () => {
 
   return (
     <nav className="bg-white shadow-md fixed w-full z-50 top-0">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-32 flex items-center justify-between gap-4 sm:gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-0 min-h-[5rem] sm:h-32 flex flex-wrap items-center justify-between gap-y-3 gap-x-4 sm:gap-8">
 
         {/* 1. Логотип */}
-        <Link to="/" className="flex-shrink-0 flex items-center" onClick={closeMenu}>
+        <Link to="/" className="flex-shrink-0 flex items-center order-1" onClick={closeMenu}>
           <span className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
             Lahan<span className="text-blue-600">Shop</span>
           </span>
         </Link>
 
-        {/* 2. Каталог (Дропдаун категорій) */}
-        <div className="hidden md:block relative  ">
-          <CategoryDropdown />
+        {/* 2 & 3. Каталог і Пошук */}
+        <div className="w-full sm:w-auto sm:flex-1 flex items-center gap-2 sm:gap-4 order-3 sm:order-2 mt-1 sm:mt-0 z-40">
+          {/* 2. Каталог (Дропдаун категорій) */}
+          <div className="relative">
+            <CategoryDropdown />
+          </div>
+
+          {/* 3. Пошук (по центру, розтягується) */}
+          <form onSubmit={handleSearch} className="flex-grow max-w-xl relative">
+            <div className="relative">
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded-xl py-2 sm:py-2.5 pl-4 sm:pl-5 pr-10 sm:pr-12 text-sm sm:text-base text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm transition-all"
+                placeholder="Я шукаю..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <button
+                type="submit"
+                className="absolute right-1.5 sm:right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 text-white p-1.5 rounded-full hover:bg-blue-700 transition-colors block"
+              >
+                <FaSearch size={14} className="sm:w-4 sm:h-4" />
+              </button>
+            </div>
+          </form>
         </div>
 
-        {/* 3. Пошук (по центру, розтягується) */}
-        <form onSubmit={handleSearch} className="flex-grow max-w-xl relative hidden sm:block">
-          <div className="relative">
-            <input
-              type="text"
-              className="w-full border border-gray-300 rounded-xl py-2.5 pl-5 pr-12 text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm transition-all"
-              placeholder="Я шукаю..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <button
-              type="submit"
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 text-white p-1.5 rounded-full hover:bg-blue-700 transition-colors"
-            >
-              <FaSearch size={16} />
-            </button>
-          </div>
-        </form>
-
         {/* 4. Права частина (Кошик + Меню користувача) */}
-        <div className="flex items-center gap-4 sm:gap-6">
+        <div className="flex items-center gap-4 sm:gap-6 order-2 sm:order-3">
 
           {/* --- КОШИК --- */}
           <Link

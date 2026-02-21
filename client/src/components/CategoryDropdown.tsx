@@ -1,43 +1,97 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import type { Category } from '../types';
 import { FaBars, FaChevronRight } from 'react-icons/fa';
 import api from '../services/axiosInstance';
 
 // --- РЕКУРСИВНИЙ КОМПОНЕНТ ---
-const CategoryItem = ({ category }: { category: Category }) => {
+const CategoryItem = ({ category, depth = 0 }: { category: Category; depth?: number }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [openLeft, setOpenLeft] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
   const hasChildren = category.children && category.children.length > 0;
 
+  useEffect(() => {
+    if (isHovered && menuRef.current) {
+      const rect = menuRef.current.getBoundingClientRect();
+      // Якщо меню виходить за межі екрану справа, відкриваємо його наліво
+      if (rect.right > window.innerWidth - 20) {
+        setOpenLeft(true);
+      }
+    } else if (!isHovered) {
+      setOpenLeft(false);
+    }
+  }, [isHovered]);
+
+  // Вираховуємо стилі залежно від глибини вкладеності (для мобільних)
+  const getDepthStyles = () => {
+    if (depth === 0) return "text-base font-medium";
+    if (depth === 1) return "text-[15px] font-medium text-gray-700";
+    if (depth === 2) return "text-sm text-gray-600";
+    return "text-[13px] text-gray-500"; // Для 3+ рівня
+  };
+
   return (
-    <div 
+    <div
       className="relative"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Посилання */}
-      <Link
-        to={`/category/${category.id}`}
-        className={`flex items-center justify-between px-5 py-3 text-base transition first:rounded-t-lg last:rounded-b-lg
-          ${isHovered ? 'bg-blue-50 text-blue-600' : 'text-gray-700'}`}
-      >
-        <span className="font-medium">{category.name}</span>
-        
-        {/* Тільки стрілочка, якщо є підкатегорії (без цифр) */}
-        {hasChildren && (
-            <FaChevronRight size={12} className="text-gray-400" />
-        )}
-      </Link>
+      {/* Контейнер посилання та кнопки розгортання для мобільних */}
+      <div className={`flex items-center justify-between transition first:rounded-t-lg last:rounded-b-lg ${isHovered || isMobileOpen ? 'bg-blue-50 text-blue-600' : 'text-gray-700'}`}>
+        <Link
+          to={`/category/${category.id}`}
+          className={`flex-grow px-5 py-3 ${getDepthStyles()}`}
+        >
+          {category.name}
+        </Link>
 
-      {/* ВИПАДАЮЧИЙ СПИСОК (без змін) */}
-      {hasChildren && isHovered && (
-        <div className="absolute left-full top-0 w-64 -ml-1 pl-1 z-50">
-          <div className="bg-white shadow-xl rounded-lg border border-gray-100 py-2">
-            {category.children!.map((child) => (
-              <CategoryItem key={child.id} category={child} />
-            ))}
-          </div>
-        </div>
+        {/* Стрілочка розгортання */}
+        {hasChildren && (
+          <button
+            type="button"
+            className="p-3 mr-1 text-gray-400 hover:text-blue-600"
+            onClick={(e) => {
+              e.preventDefault();
+              setIsMobileOpen(!isMobileOpen);
+            }}
+          >
+            <FaChevronRight size={12} className={`transition-transform duration-200 ${(isMobileOpen || isHovered) ? 'md:rotate-0' : ''} ${isMobileOpen ? 'rotate-90' : ''}`} />
+          </button>
+        )}
+      </div>
+
+      {/* ВИПАДАЮЧИЙ СПИСОК */}
+      {hasChildren && (
+        <>
+          {/* Десктоп версія */}
+          {isHovered && (
+            <div
+              ref={menuRef}
+              className={`hidden md:block absolute top-0 w-64 z-50 ${openLeft ? 'right-full -mr-1 pr-1' : 'left-full -ml-1 pl-1'}`}
+            >
+              <div className="bg-white shadow-xl rounded-lg border border-gray-100 py-2">
+                {category.children!.map((child) => (
+                  <CategoryItem key={child.id} category={child} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Мобільна версія (акордеон) */}
+          {isMobileOpen && (
+            <div className="md:hidden w-full relative bg-blue-50/20">
+              {/* Візуальна лінія ієрархії */}
+              <div className="border-l-2 border-blue-200/50 hover:border-blue-300 transition-colors ml-4 pl-1 py-1">
+                {category.children!.map((child) => (
+                  <CategoryItem key={child.id} category={child} depth={depth + 1} />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -81,17 +135,20 @@ const CategoryDropdown = () => {
   };
 
   return (
-    <div className="relative" 
-         onMouseEnter={() => setIsOpen(true)} 
-         onMouseLeave={() => setIsOpen(false)}>
-      
-      <button className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg text-lg font-medium hover:bg-blue-700 transition shadow-md">
+    <div className="relative"
+      onMouseEnter={() => setIsOpen(true)}
+      onMouseLeave={() => setIsOpen(false)}>
+
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 bg-blue-600 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-md sm:rounded-lg text-base sm:text-lg font-medium hover:bg-blue-700 transition shadow-md"
+      >
         <FaBars />
-        <span>Каталог</span>
+        <span className="hidden sm:inline">Каталог</span>
       </button>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%)] left-0 w-72 bg-white shadow-2xl rounded-lg border border-gray-100 py-3 z-50">
+        <div className="absolute top-[calc(100%)] left-0 w-[280px] sm:w-72 max-h-[80vh] md:max-h-none overflow-y-auto overflow-x-hidden md:overflow-visible bg-white shadow-2xl rounded-lg border border-gray-100 py-3 z-50">
           {loading ? (
             <div className="px-5 py-4 text-gray-500 text-center">Завантаження...</div>
           ) : (

@@ -96,6 +96,42 @@ namespace LahanShop.Controllers
             return BadRequest(new { Message = "Помилка підтвердження пошти. Можливо, посилання застаріло." });
         }
 
+        // POST: api/auth/resend-confirmation-email
+        [HttpPost("resend-confirmation-email")]
+        public async Task<IActionResult> ResendConfirmationEmail([FromBody] ResendEmailDto dto)
+        {
+            if (string.IsNullOrEmpty(dto.Email))
+                return BadRequest(new { Message = "Email є обов'язковим." });
+
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+                // Повертаємо Ok(а не NotFound) для безпеки, щоб не було перевірки наявності імейлів
+                return Ok(new { Message = "Якщо акаунт існує та не підтверджений, ми відправили новий лист." });
+
+            var isEmailConfirmed = await _userManager.IsEmailConfirmedAsync(user);
+            if (isEmailConfirmed)
+                return BadRequest(new { Message = "Ця електронна адреса вже підтверджена." });
+
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+
+            var frontendUrl = _configuration["ApiConnection:Server"];
+            if (!string.IsNullOrEmpty(frontendUrl) && !frontendUrl.EndsWith("/"))
+            {
+                frontendUrl += "/";
+            }
+
+            var callbackUrl = $"{frontendUrl}confirm-email?userId={user.Id}&token={encodedToken}";
+
+            var message = $"<h1>Вітаємо знову в LahanShop!</h1>" +
+                  $"<p>Ви запросили новий лист для підтвердження. Будь ласка, перейдіть за посиланням:</p>" +
+                  $"<a href='{callbackUrl}'>Підтвердити пошту</a>";
+
+            await _emailService.SendEmailAsync(user.Email, "Повторне підтвердження реєстрації", message);
+
+            return Ok(new { Message = "Якщо акаунт існує та не підтверджений, ми відправили новий лист." });
+        }
+
         // POST: api/auth/login
         [HttpPost("login")]
         public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginDto dto)

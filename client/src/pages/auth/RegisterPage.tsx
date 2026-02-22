@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../../services/axiosInstance';
+import { FaEnvelope } from 'react-icons/fa';
 
 interface IdentityError {
-    code: string;
-    description: string;
+  code: string;
+  description: string;
 }
 
 const RegisterPage = () => {
@@ -17,16 +18,15 @@ const RegisterPage = () => {
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
-  const navigate = useNavigate();
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     if (formData.password !== formData.confirmPassword) {
-        setError("Паролі не співпадають!");
-        return;
+      setError("Паролі не співпадають!");
+      return;
     }
 
     setIsLoading(true);
@@ -39,99 +39,133 @@ const RegisterPage = () => {
         fullName: formData.fullName
       });
 
-      alert("Реєстрація успішна! Тепер увійдіть.");
-      navigate('/login');
-      
+      setIsSuccess(true);
+
     } catch (err) { // 1. Прибрали : any (тепер це unknown)
-        console.error(err);
+      console.error(err);
 
-        // 2. Перевіряємо, чи це помилка від Axios
-        if (axios.isAxiosError(err) && err.response) {
-            const data = err.response.data;
+      // 2. Перевіряємо, чи це помилка від Axios
+      if (axios.isAxiosError(err) && err.response) {
+        const data = err.response.data;
 
-            // 3. Перевіряємо, чи це масив (стандартна відповідь Identity)
-            if (Array.isArray(data)) {
-                // Кастимо data до нашого інтерфейсу
-                const messages = (data as IdentityError[])
-                    .map(e => e.description)
-                    .join(' ');
-                setError(messages);
-            } 
-            // 4. Якщо це просто рядок (наприклад "Користувач вже існує")
-            else if (typeof data === 'string') {
-                setError(data);
-            } else {
-                setError("Помилка реєстрації");
-            }
-        } else {
-            // Якщо це не Axios помилка (наприклад, код впаде)
-            setError("Сталася невідома помилка");
+        // 3. Перевіряємо, чи це масив (стандартна відповідь Identity)
+        if (Array.isArray(data)) {
+          // Кастимо data до нашого інтерфейсу
+          const messages = (data as IdentityError[])
+            .map(e => e.description)
+            .join(' ');
+          setError(messages);
         }
-        } finally {
+        // 4. Перевіряємо наявність помилок валідації (ValidationProblemDetails від ASP.NET)
+        else if (data.errors && typeof data.errors === 'object') {
+          const errorMessages = Object.values(data.errors)
+            .flat()
+            .join(' ');
+          setError(errorMessages as string);
+        }
+        // 5. Перевіряємо наявність поля Message або message
+        else if (data.Message || data.message) {
+          setError(data.Message || data.message);
+        }
+        // 6. Якщо це просто рядок
+        else if (typeof data === 'string') {
+          setError(data);
+        } else {
+          setError("Помилка реєстрації. Перевірте введені дані.");
+        }
+      } else {
+        // Якщо це не Axios помилка (наприклад, код впаде)
+        setError("Сталася невідома помилка");
+      }
+    } finally {
       setIsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 pt-24">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Створити акаунт
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Вже є акаунт? <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">Увійти</Link>
-          </p>
-        </div>
-        
-        <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
-          {error && <div className="text-red-500 text-center text-sm bg-red-50 p-2 rounded">{error}</div>}
-          
-          <input
-            type="text"
-            required
-            className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            placeholder="Ваше повне ім'я"
-            value={formData.fullName}
-            onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-          />
+      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md">
+        {isSuccess ? (
+          <div className="text-center py-8">
+            <div className="flex justify-center mb-6">
+              <div className="bg-blue-100 p-4 rounded-full">
+                <FaEnvelope className="text-5xl text-blue-600" />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Перевірте вашу пошту
+            </h2>
+            <p className="text-gray-600 text-sm leading-relaxed px-4 mb-8">
+              Ми відправили посилання для підтвердження на вашу електронну адресу. Будь ласка, перейдіть за ним для завершення реєстрації.
+            </p>
+            <Link
+              to="/"
+              className="inline-flex justify-center w-full px-4 py-3 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm transition-colors"
+            >
+              Повернутися на головну
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            <div>
+              <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Створити акаунт
+              </h2>
+              <p className="mt-2 text-center text-sm text-gray-600">
+                Вже є акаунт? <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">Увійти</Link>
+              </p>
+            </div>
 
-          <input
-            type="email"
-            required
-            className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            placeholder="Email"
-            value={formData.email}
-            onChange={(e) => setFormData({...formData, email: e.target.value})}
-          />
+            <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
+              {error && <div className="text-red-500 text-center text-sm bg-red-50 p-2 rounded">{error}</div>}
 
-          <input
-            type="password"
-            required
-            minLength={6}
-            className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            placeholder="Пароль (мін. 6 символів)"
-            value={formData.password}
-            onChange={(e) => setFormData({...formData, password: e.target.value})}
-          />
+              <input
+                type="text"
+                required
+                className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="Ваше повне ім'я"
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+              />
 
-          <input
-            type="password"
-            required
-            className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            placeholder="Підтвердження паролю"
-            value={formData.confirmPassword}
-            onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-          />
+              <input
+                type="email"
+                required
+                className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="Email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className={`w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${isLoading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
-          >
-            {isLoading ? 'Реєстрація...' : 'Зареєструватися'}
-          </button>
-        </form>
+              <input
+                type="password"
+                required
+                minLength={6}
+                className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="Пароль (мін. 6 символів)"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
+
+              <input
+                type="password"
+                required
+                className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="Підтвердження паролю"
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+              />
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className={`w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${isLoading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+              >
+                {isLoading ? 'Реєстрація...' : 'Зареєструватися'}
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );

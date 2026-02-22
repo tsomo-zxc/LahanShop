@@ -1,5 +1,6 @@
 ﻿using LahanShop.Data;
 using LahanShop.Models;
+using LahanShop.Services.Email;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -55,11 +56,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Налаштування Identity (паролі тощо)
 builder.Services.AddIdentity<User, IdentityRole>(options =>
 {
-    options.Password.RequireDigit = false;
+    options.Password.RequireDigit = true;
     options.Password.RequireLowercase = false;
     options.Password.RequireUppercase = false;
     options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 6;
+    options.Password.RequiredLength = 8;
+
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.AllowedForNewUsers = true;
 })
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
@@ -97,6 +102,9 @@ builder.Services.AddCors(options =>
                      .AllowCredentials(); 
     });
 });
+//Налаштування Email
+builder.Services.Configure<EmailConfiguration>(builder.Configuration.GetSection("EmailConfiguration"));
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 var app = builder.Build();
 

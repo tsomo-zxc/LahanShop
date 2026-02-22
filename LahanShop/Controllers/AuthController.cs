@@ -1,7 +1,9 @@
 ﻿using LahanShop.DTOs;
 using LahanShop.Models;
+using LahanShop.Services.Email;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.IdentityModel.Tokens;
 using System.Data;
 using System.IdentityModel.Tokens.Jwt;
@@ -11,16 +13,21 @@ using System.Threading.Tasks;
 
 namespace LahanShop.Controllers
 {
+    // --- ДОДАЄМО DTO ДЛЯ ПІДТВЕРДЖЕННЯ ПОШТИ ---
+    
+
     [Route("api/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase
     {
         private readonly UserManager<User> _userManager;
         private readonly IConfiguration _configuration;
+        private readonly IEmailService _emailService;
 
-        public AuthController(UserManager<User> userManager, IConfiguration configuration)
+        public AuthController(UserManager<User> userManager, IConfiguration configuration, IEmailService emailService)
         {
             _userManager = userManager;
+            _emailService = emailService;
             _configuration = configuration;
         }
 
@@ -30,40 +37,104 @@ namespace LahanShop.Controllers
         {
             var userExists = await _userManager.FindByEmailAsync(dto.Email);
             if (userExists != null)
-                return BadRequest("Користувач з таким email вже існує");
+                return BadRequest(new { Message = "Користувач з таким email вже існує" });
 
             var user = new User
             {
                 Email = dto.Email,
-                UserName = dto.Email, // В якості логіна використовуємо пошту
+                UserName = dto.Email,
                 FullName = dto.FullName
             };
 
             var result = await _userManager.CreateAsync(user, dto.Password);
-
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
             await _userManager.AddToRoleAsync(user, "User");
 
-            return Ok(new { Message = "Користувача створено успішно!" });
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+
+            // ВИПРАВЛЕНО: Прибрано пробіли і додано безпечну перевірку на слеш (/) в кінці
+            var frontendUrl = _configuration["ApiConnection:Server"];
+            if (!string.IsNullOrEmpty(frontendUrl) && !frontendUrl.EndsWith("/"))
+            {
+                frontendUrl += "/";
+            }
+
+            var callbackUrl = $"{frontendUrl}confirm-email?userId={user.Id}&token={encodedToken}";
+
+            var message = $"<h1>Вітаємо в LahanShop!</h1>" +
+                  $"<p>Будь ласка, підтвердіть вашу пошту, перейшовши за посиланням:</p>" +
+                  $"<a href='{callbackUrl}'>Підтвердити пошту</a>";
+
+            await _emailService.SendEmailAsync(user.Email, "Підтвердження реєстрації", message);
+
+            return Ok(new { Message = "Реєстрація успішна. Перевірте вашу поштову скриньку для підтвердження." });
+        }
+
+        // ВИПРАВЛЕНО: Використовуємо [FromBody] з правильним об'єктом ConfirmEmailDto
+        [HttpPost("confirm-email")]
+        public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailDto dto)
+        {
+            if (string.IsNullOrEmpty(dto.UserId) || string.IsNullOrEmpty(dto.Token))
+                return BadRequest(new { Message = "Невірне посилання підтвердження." });
+
+            var user = await _userManager.FindByIdAsync(dto.UserId);
+            if (user == null)
+                return NotFound(new { Message = "Користувача не знайдено." });
+
+            var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(dto.Token));
+
+            var result = await _userManager.ConfirmEmailAsync(user, decodedToken);
+
+            if (result.Succeeded)
+            {
+                return Ok(new { Message = "Пошту успішно підтверджено!" });
+            }
+
+            return BadRequest(new { Message = "Помилка підтвердження пошти. Можливо, посилання застаріло." });
         }
 
         // POST: api/auth/login
         [HttpPost("login")]
         public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginDto dto)
         {
-            // 1. Шукаємо користувача
             var user = await _userManager.FindByEmailAsync(dto.Email);
-            if (user == null) return Unauthorized("Невірний email або пароль");
+            if (user == null)
+                return Unauthorized(new { ErrorCode = "InvalidCredentials", Message = "Невірний email або пароль" });
 
-            // 2. Перевіряємо пароль
+            // ВИПРАВЛЕНО: 1. Перевірка на блокування акаунта (Brute-Force захист)
+            if (await _userManager.IsLockedOutAsync(user))
+            {
+                return StatusCode(423, new { ErrorCode = "AccountLocked", Message = "Акаунт тимчасово заблоковано через велику кількість невдалих спроб входу. Спробуйте пізніше." });
+            }
+
             var isPasswordValid = await _userManager.CheckPasswordAsync(user, dto.Password);
-            if (!isPasswordValid) return Unauthorized("Невірний email або пароль");
+            if (!isPasswordValid)
+            {
+                // Реєструємо невдалу спробу входу
+                await _userManager.AccessFailedAsync(user);
 
-            // 3. Генеруємо токен
+                if (await _userManager.IsLockedOutAsync(user))
+                {
+                    return StatusCode(423, new { ErrorCode = "AccountLocked", Message = "Акаунт щойно було заблоковано. Спробуйте пізніше." });
+                }
+
+                return Unauthorized(new { ErrorCode = "InvalidCredentials", Message = "Невірний email або пароль" });
+            }
+
+            // Якщо пароль правильний — скидаємо лічильник помилок
+            await _userManager.ResetAccessFailedCountAsync(user);
+
+            // ВИПРАВЛЕНО: 2. Форматована відповідь для непідтвердженої пошти
+            var isEmailConfirmed = await _userManager.IsEmailConfirmedAsync(user);
+            if (!isEmailConfirmed)
+            {
+                return StatusCode(403, new { ErrorCode = "EmailNotConfirmed", Message = "Будь ласка, підтвердіть вашу пошту перед входом." });
+            }
+
             var token = await GenerateJwtToken(user);
-
             var roles = await _userManager.GetRolesAsync(user);
 
             return Ok(new AuthResponseDto
@@ -86,7 +157,6 @@ namespace LahanShop.Controllers
 
             var roles = await _userManager.GetRolesAsync(user);
 
-            // Записуємо кожну роль у токен
             foreach (var role in roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
@@ -99,7 +169,7 @@ namespace LahanShop.Controllers
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddDays(7), // Токен живе 7 днів
+                expires: DateTime.Now.AddDays(7),
                 signingCredentials: creds
             );
 

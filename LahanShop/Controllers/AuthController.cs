@@ -73,7 +73,7 @@ namespace LahanShop.Controllers
             return Ok(new { Message = "Реєстрація успішна. Перевірте вашу поштову скриньку для підтвердження." });
         }
 
-        // ВИПРАВЛЕНО: Використовуємо [FromBody] з правильним об'єктом ConfirmEmailDto
+        
         [HttpPost("confirm-email")]
         public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailDto dto)
         {
@@ -95,7 +95,7 @@ namespace LahanShop.Controllers
 
             return BadRequest(new { Message = "Помилка підтвердження пошти. Можливо, посилання застаріло." });
         }
-
+       
         // POST: api/auth/resend-confirmation-email
         [HttpPost("resend-confirmation-email")]
         public async Task<IActionResult> ResendConfirmationEmail([FromBody] ResendEmailDto dto)
@@ -104,8 +104,7 @@ namespace LahanShop.Controllers
                 return BadRequest(new { Message = "Email є обов'язковим." });
 
             var user = await _userManager.FindByEmailAsync(dto.Email);
-            if (user == null)
-                // Повертаємо Ok(а не NotFound) для безпеки, щоб не було перевірки наявності імейлів
+            if (user == null)                
                 return Ok(new { Message = "Якщо акаунт існує та не підтверджений, ми відправили новий лист." });
 
             var isEmailConfirmed = await _userManager.IsEmailConfirmedAsync(user);
@@ -130,6 +129,66 @@ namespace LahanShop.Controllers
             await _emailService.SendEmailAsync(user.Email, "Повторне підтвердження реєстрації", message);
 
             return Ok(new { Message = "Якщо акаунт існує та не підтверджений, ми відправили новий лист." });
+        }
+
+        // POST: /api/auth/forgot-password
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ResendEmailDto dto) // Краще назвати ForgotPasswordDto, але хай буде так
+        {
+            if (string.IsNullOrEmpty(dto.Email))
+                return BadRequest(new { Message = "Email є обов'язковим." });
+
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            
+            if (user == null || !(await _userManager.IsEmailConfirmedAsync(user)))
+            {
+                return Ok(new { Message = "Якщо цей email зареєстрований і підтверджений, ми відправили інструкції для відновлення пароля." });
+            }
+            
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+
+            var frontendUrl = _configuration["ApiConnection:Server"];
+            if (!string.IsNullOrEmpty(frontendUrl) && !frontendUrl.EndsWith("/"))
+            {
+                frontendUrl += "/";
+            }
+                        
+            var callbackUrl = $"{frontendUrl}reset-password?email={user.Email}&token={encodedToken}";
+
+            var message = $"<h1>Відновлення пароля в LahanShop!</h1>" +
+                          $"<p>Ви запросили зміну пароля. Будь ласка, перейдіть за посиланням, щоб встановити новий пароль:</p>" +
+                          $"<a href='{callbackUrl}'>Встановити новий пароль</a>";
+
+            await _emailService.SendEmailAsync(user.Email, "Відновлення пароля", message);
+
+            return Ok(new { Message = "Якщо цей email зареєстрований і підтверджений, ми відправили інструкції для відновлення пароля." });
+        }
+
+
+        // POST: /api/auth/reset-password
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {            
+            if (string.IsNullOrEmpty(dto.Email) || string.IsNullOrEmpty(dto.Token) || string.IsNullOrEmpty(dto.NewPassword))
+                return BadRequest(new { Message = "Невірні дані для зміни пароля." });
+
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+                return BadRequest(new { Message = "Невірний запит." }); 
+
+            var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(dto.Token));
+
+            
+            var result = await _userManager.ResetPasswordAsync(user, decodedToken, dto.NewPassword);
+
+            
+            if (result.Succeeded)
+            {
+                return Ok(new { Message = "Пароль успішно змінено!" });
+            }
+            
+            return BadRequest(new { Message = "Помилка зміни пароля. Можливо, посилання застаріло або пароль занадто простий.", Errors = result.Errors });
         }
 
         // POST: api/auth/login

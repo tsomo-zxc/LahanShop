@@ -21,6 +21,8 @@ import OrderSuccessPage from './pages/OrderSuccessPage.tsx';
 import OrdersPage from './pages/OrderPage.tsx';
 import AdminOrdersPage from './pages/AdminOrdersPage.tsx';
 import ConfirmEmailPage from './pages/auth/ConfirmEmailPage.tsx';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.tsx';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage.tsx';
 
 const App: React.FC = () => {
   return (
@@ -35,6 +37,8 @@ const App: React.FC = () => {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/confirm-email" element={<ConfirmEmailPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/product/:id" element={<ProductDetails />} />
                 <Route path="/category/:id" element={<CategoryPage />} />
                 <Route path="/cart" element={<CartPage />} />

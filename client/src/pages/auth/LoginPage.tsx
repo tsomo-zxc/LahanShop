@@ -172,6 +172,14 @@ const LoginPage = () => {
             </div>
           </div>
 
+          <div className="flex items-center justify-end">
+            <div className="text-sm">
+              <Link to="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
+                Забули пароль?
+              </Link>
+            </div>
+          </div>
+
           <div>
             <button
               type="submit"

@@ -17,6 +17,7 @@ const ProductDetails: React.FC = () => {
   
   useEffect(() => {
     if (!id) return;
+    
 
     const fetchProduct = async () => {
       try {
@@ -26,7 +27,7 @@ const ProductDetails: React.FC = () => {
           // Set initial image
           if (data.images && data.images.length > 0) {
             const firstImg = data.images[0].url;
-            setSelectedImage(firstImg.startsWith('http') ? firstImg : `${API_BASE_URL}${firstImg}`);
+            setSelectedImage(firstImg.startsWith('http') ? firstImg : `${API_BASE_URL}${firstImg.startsWith('/') ? '' : '/'}${firstImg}`);
           } else {
             setSelectedImage("https://picsum.photos/800/800?grayscale");
           }
@@ -67,7 +68,7 @@ const ProductDetails: React.FC = () => {
   if (!product) return null;
 
   return (
-    <div className="pb-12 pt-16">
+    <div className="pb-12 pt-24">
       <button 
         onClick={() => navigate(-1)} 
         className="flex items-center text-gray-500 hover:text-blue-600 mb-6 transition-colors"
@@ -90,10 +91,10 @@ const ProductDetails: React.FC = () => {
              </div>
              
              {/* Thumbnail Strip */}
-             {product.images.length > 1 && (
+             {product.images && product.images.length > 1 && (
                <div className="flex space-x-4 overflow-x-auto pb-2 w-full max-w-lg">
                  {product.images.map((img: ProductImage) => {
-                   const fullUrl = img.url.startsWith('http') ? img.url : `${API_BASE_URL}${img.url}`;
+                   const fullUrl = img.url.startsWith('http') ? img.url : `${API_BASE_URL}${img.url.startsWith('/') ? '' : '/'}${img.url}`;
                    return (
                     <button
                       key={img.id}

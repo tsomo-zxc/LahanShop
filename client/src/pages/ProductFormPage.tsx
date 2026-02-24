@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import api from '../services/axiosInstance';
 import type { Category, CategorySpecTemplate, ProductImage } from '../types';
-import { FaTrash, FaPlus, FaMagic,FaArrowLeft } from 'react-icons/fa';
+import { FaTrash, FaPlus, FaMagic,FaArrowLeft, FaUpload } from 'react-icons/fa';
 
 interface SpecItem {
     key: string;
@@ -25,7 +25,8 @@ const ProductFormPage = () => {
   const [specs, setSpecs] = useState<SpecItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [images, setImages] = useState<string[]>([]);
-  const [newImageUrl, setNewImageUrl] = useState('');
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   // 1. ЗАВАНТАЖЕННЯ ДАНИХ (Виправлено парсинг)
   useEffect(() => {
@@ -129,36 +130,75 @@ const ProductFormPage = () => {
 
     // Тепер це буде {"Колір":"Чорний", "Вага":"1кг"} замість масиву
     const specsJson = JSON.stringify(specsObject);
+    
 
-    const payload = {
-        ...formData,
-        price: parseFloat(formData.price),
-        stockQuantity: parseInt(formData.stockQuantity),
-        categoryId: parseInt(formData.categoryId),
-        specifications: specsJson, // Відправляємо правильний JSON
-        imageUrls: images
-    };
+    const formPayload = new FormData();
+    formPayload.append('Name', formData.name);
+    formPayload.append('Description', formData.description);
+    formPayload.append('Price', formData.price.toString());
+    formPayload.append('StockQuantity', formData.stockQuantity.toString());
+    formPayload.append('CategoryId', formData.categoryId.toString());
+    formPayload.append('Specifications', specsJson);
+
+    images.forEach((url) => {
+        formPayload.append('ImageUrls', url); // Якщо у Dto є такий полі - варто узгодити
+    });
+
+    imageFiles.forEach((file) => {
+        formPayload.append('Images', file); // Тут найважливіша зміна
+    });
 
     try {
         if (isEditMode) {
-            await api.put(`/api/products/${id}`, payload);
+            await api.put(`/api/products/${id}`, formPayload);
             alert("Товар оновлено!");
         } else {
-            await api.post(`/api/products`, payload);
+            await api.post(`/api/products`, formPayload);
             alert("Товар створено!");
             navigate('/admin');
         }
-    } catch (error) {
-        alert("Помилка збереження");
-        console.error(error);
+    } catch (error: any) {
+        console.error("Повна помилка:", error.response?.data || error);
+        
+        let errorMessage = "Помилка збереження!";
+        if (error.response?.data?.errors) {
+            // ASP.NET Core ValidationProblemDetails
+            const validationErrors = Object.entries(error.response.data.errors)
+                .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(', ')}`)
+                .join('\n');
+            errorMessage += `\n\nДеталі валідації:\n${validationErrors}`;
+        } else if (error.response?.data) {
+            errorMessage += `\n\nДеталі:\n${JSON.stringify(error.response.data)}`;
+        }
+        
+        alert(errorMessage);
     }
   };
 
-  const handleAddImage = () => {
-      if (newImageUrl) {
-          setImages([...images, newImageUrl]);
-          setNewImageUrl('');
-      }
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length === 0) return;
+
+      const newFiles = [...imageFiles, ...files];
+      setImageFiles(newFiles);
+
+      const newPreviews = files.map(file => URL.createObjectURL(file));
+      setImagePreviews([...imagePreviews, ...newPreviews]);
+  };
+
+  const removeNewImage = (index: number) => {
+      const newFiles = [...imageFiles];
+      newFiles.splice(index, 1);
+      setImageFiles(newFiles);
+
+      const newPreviews = [...imagePreviews];
+      URL.revokeObjectURL(newPreviews[index]);
+      newPreviews.splice(index, 1);
+      setImagePreviews(newPreviews);
+  };
+
+  const removeExistingImage = (index: number) => {
+      setImages(images.filter((_, i) => i !== index));
   };
 
   const updateSpec = (index: number, field: 'key' | 'value', newValue: string) => {
@@ -176,7 +216,7 @@ const ProductFormPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 pt-16 max-w-4xl">
+    <div className="container mx-auto px-4 py-8 pt-24 max-w-4xl">
         <div className="mb-6">
         <Link to="/admin" className="text-gray-600 hover:text-blue-600 flex items-center gap-2 font-medium">
             <FaArrowLeft /> Назад до Продуктів
@@ -241,18 +281,42 @@ const ProductFormPage = () => {
             {/* Фото */}
             <div className="bg-white p-6 rounded-lg shadow">
                 <h2 className="text-lg font-semibold border-b pb-2 mb-4">Зображення</h2>
-                <div className="flex gap-2 mb-4">
-                    <input placeholder="URL зображення" className="flex-1 border p-2 rounded" value={newImageUrl} onChange={e => setNewImageUrl(e.target.value)} />
-                    <button type="button" onClick={handleAddImage} className="bg-green-600 text-white px-4 rounded hover:bg-green-700">OK</button>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                    {images.map((img, idx) => (
-                        <div key={idx} className="relative group border rounded overflow-hidden h-24">
-                            <img src={img} alt="Product" className="w-full h-full object-cover" />
-                            <button type="button" onClick={() => setImages(images.filter((_, i) => i !== idx))} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"><FaTrash size={12} /></button>
+                
+                {/* Drag & Drop / Upload Zone */}
+                <div className="flex items-center justify-center w-full mb-6">
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-blue-300 border-dashed rounded-lg cursor-pointer bg-blue-50 hover:bg-blue-100 transition-colors">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
+                            <FaUpload className="w-8 h-8 mb-3 text-blue-500" />
+                            <p className="mb-2 text-sm text-gray-600"><span className="font-semibold text-blue-600">Натисніть для завантаження</span> або перетягніть файли сюди</p>
+                            <p className="text-xs text-gray-500">Дозволені формати: JPG, PNG, WEBP (кілька файлів)</p>
                         </div>
-                    ))}
+                        <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileChange} />
+                    </label>
                 </div>
+
+                {/* Grid for Previews */}
+                {(imagePreviews.length > 0 || images.length > 0) && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        {/* Existing Images (from Edit Mode) */}
+                        {images.map((img, idx) => (
+                            <div key={`existing-${idx}`} className="relative group border rounded-lg overflow-hidden h-28 shadow-sm">
+                                <img src={img} alt="Existing" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg"></div>
+                                <button type="button" onClick={() => removeExistingImage(idx)} className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"><FaTrash size={12} /></button>
+                            </div>
+                        ))}
+                        
+                        {/* New Images */}
+                        {imagePreviews.map((preview, idx) => (
+                            <div key={`new-${idx}`} className="relative group border border-blue-200 rounded-lg overflow-hidden h-28 shadow-sm bg-gray-50">
+                                <img src={preview} alt="New Preview" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg"></div>
+                                <button type="button" onClick={() => removeNewImage(idx)} className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"><FaTrash size={12} /></button>
+                                <div className="absolute bottom-1 left-1 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow opacity-90">Нове</div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-lg text-lg font-bold hover:bg-blue-700 shadow-lg transition transform active:scale-[0.98]">

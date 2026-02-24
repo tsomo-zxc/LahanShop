@@ -22,6 +22,12 @@ api.interceptors.request.use(
             config.headers.Authorization = `Bearer ${token}`;
         }
 
+        // Якщо відправляємо FormData (наприклад файли), видаляємо жорсткий Content-Type,
+        // щоб браузер сам згенерував multipart/form-data разом із потрібним boundary.
+        if (config.data instanceof FormData) {
+            delete config.headers['Content-Type'];
+        }
+
         return config;
     },
     (error) => {

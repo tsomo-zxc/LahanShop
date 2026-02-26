@@ -2,7 +2,7 @@ import { FaPhoneAlt, FaEnvelope, FaClock, FaInstagram, FaTelegramPlane, FaMapMar
 
 const AboutPage = () => {
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 mt-24">
+    <div className="min-h-screen bg-gray-50 py-24 px-4 sm:px-6 lg:px-8 ">
       <div className="max-w-7xl mx-auto">
         {/* Заголовок та опис */}
         <div className="text-center mb-16">
@@ -59,7 +59,7 @@ const AboutPage = () => {
 
             {/* Соцмережі */}
             <div className="mt-10 pt-8 border-t border-gray-100">
-              <h3 className="text-xl font-bold text-gray-900 mb-6 font-medium">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">
                 Ми в соцмережах
               </h3>
               <div className="flex gap-4">

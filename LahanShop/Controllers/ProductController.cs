@@ -161,7 +161,7 @@ namespace LahanShop.Controllers
                 CategoryName = p.Category?.Name ?? "Без категорії",
                 StockQuantity = p.StockQuantity,
                 Specifications = p.Specifications,
-                Images = p.Images.Select(img => new ProductImageDto
+                Images = p.Images.OrderBy(img => img.SortOrder).Select(img => new ProductImageDto
                 {
                     Id = img.Id,
                     Url = img.Url
@@ -187,8 +187,8 @@ namespace LahanShop.Controllers
             // Використовуємо Include, щоб підтягнути дані про категорію
             // FirstOrDefaultAsync шукає перший елемент, що відповідає умові
             var product = await _context.Products
-                .Include(p => p.Category)
-                .Include(x => x.Images)
+                .Include(p => p.Category)                
+                .Include(p => p.Images.OrderBy(i => i.SortOrder))
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null)
@@ -379,8 +379,9 @@ namespace LahanShop.Controllers
 
         // DELETE: api/products/images/5
         [HttpDelete("images/{imageId}")]
-        public async Task<IActionResult> DeleteProductImage(int imageId)
+        public async Task<ActionResult<ProductImageDto>> DeleteProductImage(int imageId)
         {
+            // Шукаємо сутність у базі даних
             var image = await _context.ProductImages.FindAsync(imageId);
             if (image == null) return NotFound("Картинку не знайдено");
 
@@ -391,7 +392,40 @@ namespace LahanShop.Controllers
             _context.ProductImages.Remove(image);
             await _context.SaveChangesAsync();
 
-            return Ok(new { Message = "Фото успішно видалено" });
+            // 3. Формуємо та повертаємо DTO видаленої картинки
+            var deletedImageDto = new ProductImageDto
+            {
+                Id = image.Id,
+                Url = image.Url
+            };
+
+            return Ok(deletedImageDto);
+        }
+
+        // PUT: api/products/images/reorder
+        [HttpPut("images/reorder")]
+        public async Task<IActionResult> ReorderImages([FromBody] List<int> orderedImageIds)
+        {
+            if (orderedImageIds == null || !orderedImageIds.Any())
+                return BadRequest("Список ID порожній");
+
+            // 1. Проходимося по кожному ID, який прислав React
+            for (int i = 0; i < orderedImageIds.Count; i++)
+            {
+                var imageId = orderedImageIds[i];
+                var image = await _context.ProductImages.FindAsync(imageId);
+
+                if (image != null)
+                {
+                    // 2. Встановлюємо новий порядок (0, 1, 2, 3...)
+                    image.SortOrder = i;
+                }
+            }
+
+            // 3. Зберігаємо всі зміни в базу одним махом
+            await _context.SaveChangesAsync();
+
+            return Ok(new { Message = "Порядок зображень успішно оновлено" });
         }
 
         [HttpGet("category/{categoryId}")]
@@ -451,7 +485,7 @@ namespace LahanShop.Controllers
                 Price = p.Price,
                 StockQuantity = p.StockQuantity,
                 CategoryName = p.Category?.Name,
-                Images = p.Images.Select(i => new ProductImageDto { Id = i.Id, Url = i.Url }).ToList()
+                Images = p.Images.OrderBy(i => i.SortOrder).Select(i => new ProductImageDto { Id = i.Id, Url = i.Url }).ToList()
             }).ToList();
 
             var result = new PagedResult<ProductDto>

@@ -10,7 +10,8 @@ import {
   FaTools,
   FaSearch,
   FaBoxOpen,
-  FaUserPlus
+  FaUserPlus,
+  FaPhoneAlt
 } from 'react-icons/fa';
 import CategoryDropdown from './CategoryDropdown';
 
@@ -75,13 +76,45 @@ const Navbar = () => {
 
   return (
     <nav className="bg-white shadow-md fixed w-full z-50 top-0">
+      {/* Top Bar */}
+      <div className="hidden md:flex bg-gray-100 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-2 flex justify-between items-center text-xs text-gray-600">
+          {/* Ліва частина */}
+          <div className="flex items-center gap-6">
+            <a href="tel:+380991234567" className="flex items-center gap-1.5 hover:text-blue-600 transition-colors">
+              <FaPhoneAlt />
+              <span>+38 (099) 123-45-67</span>
+            </a>
+            <a href="tel:+380987654321" className="flex items-center gap-1.5 hover:text-blue-600 transition-colors">
+              <FaPhoneAlt />
+              <span>+38 (098) 765-43-21</span>
+            </a>
+          </div>
+
+          {/* Права частина */}
+          <div className="flex items-center gap-6">
+            <Link to="/about" className="hover:text-blue-600 transition-colors font-medium">
+              Про нас
+            </Link>
+            <Link to="/info" className="hover:text-blue-600 transition-colors font-medium">
+              Додаткова інформація
+            </Link>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-0 min-h-[5rem] sm:h-32 flex flex-wrap items-center justify-between gap-y-3 gap-x-4 sm:gap-8">
 
         {/* 1. Логотип */}
         <Link to="/" className="flex-shrink-0 flex items-center order-1" onClick={closeMenu}>
-          <span className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
-            Lahan<span className="text-blue-600">Shop</span>
-          </span>
+          <div className="flex flex-col">
+            <span className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight uppercase leading-none">
+              Авторозбірка
+            </span>
+            <span className="text-xl sm:text-2xl font-extrabold text-blue-600 tracking-tight uppercase leading-none">
+              Стадники
+            </span>
+          </div>
         </Link>
 
         {/* 2 & 3. Каталог і Пошук */}

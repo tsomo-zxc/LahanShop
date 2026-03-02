@@ -1,5 +1,6 @@
 ﻿using LahanShop.Data;
 using LahanShop.Models;
+using LahanShop.Services;
 using LahanShop.Services.Email;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -105,6 +106,8 @@ builder.Services.AddCors(options =>
 //Налаштування Email
 builder.Services.Configure<EmailConfiguration>(builder.Configuration.GetSection("EmailConfiguration"));
 builder.Services.AddScoped<IEmailService, EmailService>();
+//Налаштування картинок
+builder.Services.AddScoped<IImageService, ImageService>();
 
 var app = builder.Build();
 

@@ -4,6 +4,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { CartProvider } from './context/CartContext';
 import Navbar from './components/Navbar';
+import Footbar from './components/Footbar';
 import Home from './pages/Home';
 import CategoryPage from './pages/CategoryPage';
 import ProductDetails from './pages/ProductDetails';
@@ -21,6 +22,10 @@ import OrderSuccessPage from './pages/OrderSuccessPage.tsx';
 import OrdersPage from './pages/OrderPage.tsx';
 import AdminOrdersPage from './pages/AdminOrdersPage.tsx';
 import ConfirmEmailPage from './pages/auth/ConfirmEmailPage.tsx';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.tsx';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage.tsx';
+import AboutPage from './pages/AboutPage.tsx';
+import InfoPage from './pages/InfoPage.tsx';
 
 const App: React.FC = () => {
   return (
@@ -35,9 +40,13 @@ const App: React.FC = () => {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/confirm-email" element={<ConfirmEmailPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/product/:id" element={<ProductDetails />} />
                 <Route path="/category/:id" element={<CategoryPage />} />
                 <Route path="/cart" element={<CartPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/info" element={<InfoPage />} />
 
                 <Route element={<ProtectedRoute requireAdmin={true} />}>
                   <Route path="/admin" element={<AdminPage />} />
@@ -58,11 +67,7 @@ const App: React.FC = () => {
                 </Route>
               </Routes>
             </main>
-            <footer className="bg-white border-t border-gray-200 mt-20 py-10">
-              <div className="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
-                &copy; {new Date().getFullYear()} LahanShop. Всі права захищено.
-              </div>
-            </footer>
+            <Footbar />
           </div>
           <ToastContainer
             position="bottom-right"

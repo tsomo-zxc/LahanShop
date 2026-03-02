@@ -1,13 +1,13 @@
 import axios from 'axios';
-import { API_BASE_URL } from '../constants';
 import type { Product } from '../types';
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_URL,
   headers: {
-    'Content-Type': 'application/json',
+    'Content-Type': 'application/json'
   },
 });
+
 
 // Mock data for fallback (since localhost:5001 won't be reachable in this preview environment)
 const MOCK_PRODUCTS: Product[] = [
@@ -73,10 +73,10 @@ export const productService = {
       const response = await api.get<Product>(`/api/products/${id}`);
       return response.data;
     } catch (error) {
-       console.warn("API unreachable, returning mock data for demonstration.");
-       console.error(error);
-       const product = MOCK_PRODUCTS.find(p => p.id === id);
-       return new Promise((resolve) => setTimeout(() => resolve(product), 500));
+      console.warn("API unreachable, returning mock data for demonstration.");
+      console.error(error);
+      const product = MOCK_PRODUCTS.find(p => p.id === id);
+      return new Promise((resolve) => setTimeout(() => resolve(product), 500));
     }
   }
 };

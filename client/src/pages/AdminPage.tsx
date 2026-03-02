@@ -123,7 +123,9 @@ const AdminPage = () => {
                     {products.length > 0 ? products.map((product) => (
                     <tr key={product.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="font-medium text-gray-900">{product.name}</div>
+                            <Link to={`/product/${product.id}`} className="font-medium text-blue-600 hover:text-blue-900 hover:underline">
+                                {product.name}
+                            </Link>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {product.categoryName || '-'}

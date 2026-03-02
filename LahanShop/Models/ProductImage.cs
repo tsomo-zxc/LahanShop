@@ -9,6 +9,7 @@ namespace LahanShop.Models
 
         // Зв'язок з товаром
         public int ProductId { get; set; }
+        public int SortOrder { get; set; } = 0;
 
         [JsonIgnore] // Щоб не зациклило
         public Product? Product { get; set; }

@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using LahanShop.Data;   
-using LahanShop.Models; 
+﻿using LahanShop.Data;   
 using LahanShop.DTOs;
+using LahanShop.Models; 
+using LahanShop.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LahanShop.Controllers
 {
@@ -13,12 +14,14 @@ namespace LahanShop.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _env;
+        private readonly IImageService _imageService;
 
         // Конструктор: тут ми отримуємо доступ до бази даних (Dependency Injection)
-        public ProductsController(AppDbContext context, IWebHostEnvironment env)
+        public ProductsController(AppDbContext context, IWebHostEnvironment env, IImageService imageService)
         {
             _context = context;
             _env = env;
+            _imageService = imageService;
         }
         private int CalculateRelevanceScore(Product p, string[] terms)
         {
@@ -158,7 +161,7 @@ namespace LahanShop.Controllers
                 CategoryName = p.Category?.Name ?? "Без категорії",
                 StockQuantity = p.StockQuantity,
                 Specifications = p.Specifications,
-                Images = p.Images.Select(img => new ProductImageDto
+                Images = p.Images.OrderBy(img => img.SortOrder).Select(img => new ProductImageDto
                 {
                     Id = img.Id,
                     Url = img.Url
@@ -184,8 +187,8 @@ namespace LahanShop.Controllers
             // Використовуємо Include, щоб підтягнути дані про категорію
             // FirstOrDefaultAsync шукає перший елемент, що відповідає умові
             var product = await _context.Products
-                .Include(p => p.Category)
-                .Include(x => x.Images)
+                .Include(p => p.Category)                
+                .Include(p => p.Images.OrderBy(i => i.SortOrder))
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null)
@@ -246,11 +249,11 @@ namespace LahanShop.Controllers
         }
 
         // POST: api/products
-        [HttpPost]    
-        public async Task<ActionResult<ProductDto>> PostProduct([FromBody] CreateProductDto createDto)
+        [HttpPost]
+        public async Task<ActionResult<ProductDto>> PostProduct([FromForm] CreateProductDto createDto) // ЗМІНЕНО НА [FromForm]
         {
             var category = await _context.Categories.FindAsync(createDto.CategoryId);
-            if (category == null) return BadRequest("Category not found");
+            if (category == null) return BadRequest("Категорію не знайдено");
 
             var product = new Product
             {
@@ -259,47 +262,35 @@ namespace LahanShop.Controllers
                 Description = createDto.Description,
                 CategoryId = createDto.CategoryId,
                 Specifications = createDto.Specifications,
-                StockQuantity = createDto.StockQuantity
+                StockQuantity = createDto.StockQuantity,
+                Images = new List<ProductImage>() // Ініціалізуємо список, щоб уникнути помилок
             };
 
-            // --- ЛОГІКА ЗБЕРЕЖЕННЯ ФАЙЛІВ ---
-            if (createDto.Images != null)
+            // --- ХМАРНА ЛОГІКА ЗБЕРЕЖЕННЯ ФАЙЛІВ ---
+            if (createDto.Images != null && createDto.Images.Any())
             {
                 foreach (var file in createDto.Images)
                 {
-                    // 1. Перевірка на розмір (наприклад, до 5МБ)
                     if (file.Length > 0)
                     {
-                        // 2. Генеруємо унікальне ім'я (щоб не перезаписати існуючі файли)
-                        // Було: "my-photo.jpg" -> Стало: "a1b2c3d4-my-photo.jpg"
-                        var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                        // Викликаємо наш новий сервіс. Він сам обріже фото, конвертує у WebP і закине в Azure
+                        var imageUrl = await _imageService.UploadImageAsync(file);
 
-                        // 3. Шлях до папки wwwroot/images
-                        var uploadsFolder = Path.Combine(_env.WebRootPath, "images");
-
-                        // Якщо папки немає — створюємо
-                        if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
-
-                        var filePath = Path.Combine(uploadsFolder, fileName);
-
-                        // 4. Зберігаємо файл на диск
-                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        // Якщо завантаження пройшло успішно і ми отримали посилання
+                        if (!string.IsNullOrEmpty(imageUrl))
                         {
-                            await file.CopyToAsync(stream);
+                            // Додаємо пряме посилання з Azure в базу даних
+                            product.Images.Add(new ProductImage { Url = imageUrl });
                         }
-
-                        // 5. Додаємо запис в базу даних (URL)
-                        // /images/файл.jpg
-                        product.Images.Add(new ProductImage { Url = $"/images/{fileName}" });
                     }
                 }
             }
-            // ---------------------------------
+            // ---------------------------------------
 
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
 
-            // Повертаємо результат
+            // Формуємо відповідь для фронтенду
             var resultDto = new ProductDto
             {
                 Id = product.Id,
@@ -314,19 +305,30 @@ namespace LahanShop.Controllers
                 }).ToList()
             };
 
-            return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, resultDto);
+            return CreatedAtAction(nameof(PostProduct), new { id = product.Id }, resultDto);
         }
 
         // DELETE: api/products/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
-            var product = await _context.Products.FindAsync(id);
+            // Обов'язково завантажуємо товар РАЗОМ із його картинками (.Include)
+            var product = await _context.Products
+                .Include(p => p.Images)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
             if (product == null)
             {
                 return NotFound();
             }
 
+            // 1. Видаляємо всі фізичні файли з Azure
+            foreach (var image in product.Images)
+            {
+                await _imageService.DeleteImageAsync(image.Url);
+            }
+
+            // 2. Видаляємо запис з бази даних (Entity Framework сам видалить записи з таблиці ProductImages завдяки каскадному видаленню)
             _context.Products.Remove(product);
             await _context.SaveChangesAsync();
 
@@ -335,75 +337,95 @@ namespace LahanShop.Controllers
 
         // PUT: api/products/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromBody] CreateProductDto dto)
+        public async Task<IActionResult> UpdateProduct(int id, [FromForm] CreateProductDto dto) // ЗМІНЕНО НА [FromForm]
         {
-            // 1. Шукаємо товар разом з картинками
             var product = await _context.Products
                 .Include(p => p.Images)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null) return NotFound("Товар не знайдено");
 
-            // 2. Перевіряємо нову категорію (якщо вона змінилась)
             var category = await _context.Categories.FindAsync(dto.CategoryId);
             if (category == null) return BadRequest("Такої категорії не існує");
 
-            // 3. Оновлюємо базові поля
             product.Name = dto.Name;
             product.Price = dto.Price;
             product.Description = dto.Description;
             product.CategoryId = dto.CategoryId;
             product.StockQuantity = dto.StockQuantity;
-            product.Specifications = dto.Specifications; // Оновлюємо JSON
+            product.Specifications = dto.Specifications;
 
-            // 4. Обробка НОВИХ картинок (додавання до існуючих)
-            if (dto.Images != null && dto.Images.Count > 0)
+            // --- ХМАРНА ЛОГІКА ДОДАВАННЯ НОВИХ КАРТИНОК ---
+            if (dto.Images != null && dto.Images.Any())
             {
-                var uploadsFolder = Path.Combine(_env.WebRootPath, "images");
-                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
-
                 foreach (var file in dto.Images)
                 {
                     if (file.Length > 0)
                     {
-                        var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                        var filePath = Path.Combine(uploadsFolder, fileName);
+                        var imageUrl = await _imageService.UploadImageAsync(file);
 
-                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        if (!string.IsNullOrEmpty(imageUrl))
                         {
-                            await file.CopyToAsync(stream);
+                            product.Images.Add(new ProductImage { Url = imageUrl });
                         }
-
-                        // Додаємо в колекцію
-                        product.Images.Add(new ProductImage { Url = $"/images/{fileName}" });
                     }
                 }
             }
 
-            // 5. Зберігаємо зміни
             await _context.SaveChangesAsync();
 
             return Ok(new { Message = "Товар оновлено успішно!" });
         }
 
+        // DELETE: api/products/images/5
         [HttpDelete("images/{imageId}")]
-        public async Task<IActionResult> DeleteProductImage(int imageId)
+        public async Task<ActionResult<ProductImageDto>> DeleteProductImage(int imageId)
         {
+            // Шукаємо сутність у базі даних
             var image = await _context.ProductImages.FindAsync(imageId);
             if (image == null) return NotFound("Картинку не знайдено");
 
-            // 1. Видаляємо файл з диска (опціонально, але бажано для економії місця)
-            var filePath = Path.Combine(_env.WebRootPath, image.Url.TrimStart('/'));
-            if (System.IO.File.Exists(filePath))
-            {
-                System.IO.File.Delete(filePath);
-            }
+            // 1. Видаляємо фізичний файл з Azure Blob Storage
+            await _imageService.DeleteImageAsync(image.Url);
 
-            // 2. Видаляємо запис з бази
+            // 2. Видаляємо запис з бази даних
             _context.ProductImages.Remove(image);
             await _context.SaveChangesAsync();
 
-            return Ok(new { Message = "Фото видалено" });
+            // 3. Формуємо та повертаємо DTO видаленої картинки
+            var deletedImageDto = new ProductImageDto
+            {
+                Id = image.Id,
+                Url = image.Url
+            };
+
+            return Ok(deletedImageDto);
+        }
+
+        // PUT: api/products/images/reorder
+        [HttpPut("images/reorder")]
+        public async Task<IActionResult> ReorderImages([FromBody] List<int> orderedImageIds)
+        {
+            if (orderedImageIds == null || !orderedImageIds.Any())
+                return BadRequest("Список ID порожній");
+
+            // 1. Проходимося по кожному ID, який прислав React
+            for (int i = 0; i < orderedImageIds.Count; i++)
+            {
+                var imageId = orderedImageIds[i];
+                var image = await _context.ProductImages.FindAsync(imageId);
+
+                if (image != null)
+                {
+                    // 2. Встановлюємо новий порядок (0, 1, 2, 3...)
+                    image.SortOrder = i;
+                }
+            }
+
+            // 3. Зберігаємо всі зміни в базу одним махом
+            await _context.SaveChangesAsync();
+
+            return Ok(new { Message = "Порядок зображень успішно оновлено" });
         }
 
         [HttpGet("category/{categoryId}")]
@@ -463,7 +485,7 @@ namespace LahanShop.Controllers
                 Price = p.Price,
                 StockQuantity = p.StockQuantity,
                 CategoryName = p.Category?.Name,
-                Images = p.Images.Select(i => new ProductImageDto { Id = i.Id, Url = i.Url }).ToList()
+                Images = p.Images.OrderBy(i => i.SortOrder).Select(i => new ProductImageDto { Id = i.Id, Url = i.Url }).ToList()
             }).ToList();
 
             var result = new PagedResult<ProductDto>

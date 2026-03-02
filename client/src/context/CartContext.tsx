@@ -1,6 +1,6 @@
 // eslint-disable-next-line react-refresh/only-export-components
-import  { createContext, useContext, useState, useEffect } from 'react';
-import type { ReactNode} from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import type { Product } from '../types';
 import type { CartItem } from '../types';
 
@@ -25,11 +25,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       if (!stored) return [];
 
       const parsed = JSON.parse(stored);
-      
+
       // 👇 ГОЛОВНЕ ВИПРАВЛЕННЯ:
       // Перевіряємо, чи це ДІЙСНО масив. Якщо ні — повертаємо пустий масив.
       return Array.isArray(parsed) ? parsed : [];
-      
+
     } catch (error) {
       console.error("Помилка читання кошика", error);
       return [];
@@ -50,8 +50,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       if (existingItem) {
         // Якщо товар вже є, збільшуємо кількість (але не більше ніж на складі)
         if (existingItem.quantity >= product.stockQuantity) {
-            alert("Більше немає в наявності!");
-            return currentItems;
+          alert("Більше немає в наявності!");
+          return currentItems;
         }
         return currentItems.map(item =>
           item.productId === product.id
@@ -78,14 +78,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const updateQuantity = (productId: number, quantity: number) => {
     if (quantity < 1) {
-        removeFromCart(productId);
-        return;
+      removeFromCart(productId);
+      return;
     }
     setItems(currentItems =>
       currentItems.map(item =>
         item.productId === productId
-            // Перевіряємо, чи не перевищує ліміт складу
-          ? { ...item, quantity: Math.min(quantity, item.stockQuantity) } 
+          // Перевіряємо, чи не перевищує ліміт складу
+          ? { ...item, quantity: Math.min(quantity, item.stockQuantity) }
           : item
       )
     );

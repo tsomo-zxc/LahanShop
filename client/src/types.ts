@@ -8,7 +8,7 @@ export interface Product {
   name: string;
   price: number;
   description: string;
-  categoryName: string; 
+  categoryName: string;
   specifications: string | null;
   images: ProductImage[];
   stockQuantity: number;
@@ -29,13 +29,13 @@ export interface Category {
   parentName: string | null;
   productsCount: number;
   // Це поле ми заповнимо самі на фронтенді
-  children?: Category[]; 
+  children?: Category[];
 }
 
 export interface CategorySpecTemplate {
-    id: number;
-    name: string;
-    categoryId: number;
+  id: number;
+  name: string;
+  categoryId: number;
 }
 
 export interface User {
@@ -59,11 +59,14 @@ export interface OrderItemDto {
   price: number;
   imageUrl?: string;
 }
+
 export interface OrderDto {
   id: number;
   orderDate: string; // Дати з JSON завжди приходять як стрічки
   status: string;    // "New", "Processing" тощо
   totalAmount: number;
   address: string;
+  customerName: string;
+  customerPhone: string;
   items: OrderItemDto[];
 }

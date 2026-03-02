@@ -1,5 +1,5 @@
 import api from './axiosInstance';
-import type {OrderDto} from '../types';
+import type { OrderDto } from '../types';
 
 // Типи даних (мають співпадати з DTO на бекенді)
 export interface CreateOrderDto {
@@ -23,6 +23,10 @@ export const createOrder = async (orderData: CreateOrderDto): Promise<OrderRespo
   return response.data;
 };
 
+export const cancelOrder = async (orderId: number) => {
+  const response = await api.put(`/api/orders/${orderId}/cancel`);
+  return response.data;
+};
 
 export const getMyOrders = async (): Promise<OrderDto[]> => {
   const response = await api.get<OrderDto[]>('/api/orders');

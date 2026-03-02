@@ -32,10 +32,11 @@ namespace LahanShop.DTOs
     {
         public int Id { get; set; }
         public DateTime OrderDate { get; set; }
-        public string Status { get; set; } = string.Empty; // Повернемо як текст ("New", "Shipped")
+        public string Status { get; set; } = string.Empty; 
         public decimal TotalAmount { get; set; }
-
         public string Address { get; set; } = string.Empty;
+        public string CustomerName { get; set; }        
+        public string CustomerPhone { get; set; }
         public List<OrderItemDto> Items { get; set; } = new List<OrderItemDto>();
     }
 

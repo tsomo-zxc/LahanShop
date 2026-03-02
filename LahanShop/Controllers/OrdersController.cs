@@ -76,15 +76,15 @@ namespace LahanShop.Controllers
                     Quantity = itemDto.Quantity,
                     Price = product.Price, // Беремо ціну з БАЗИ, а не від клієнта!                  
                 };
-                
-                order.Items.Add(orderItem);              
+
+                order.Items.Add(orderItem);
                 total += orderItem.Price * orderItem.Quantity;
             }
 
-           
+
             order.TotalAmount = total;
 
-            
+
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
 
@@ -92,14 +92,16 @@ namespace LahanShop.Controllers
         }
         [HttpGet]
         [Authorize]
-        public async Task<ActionResult<IEnumerable<OrderDto>>> GetOrders(){
+        public async Task<ActionResult<IEnumerable<OrderDto>>> GetOrders()
+        {
             string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var orders =await _context.Orders
-                .Include(o => o.Items)          
-                .ThenInclude(oi => oi.Product)  
+            var orders = await _context.Orders
+                .Include(o => o.Items)
+                    .ThenInclude(oi => oi.Product)
+                        .ThenInclude(p => p.Images.OrderBy(i => i.SortOrder))
                 .Where(o => o.UserId == userId)
-                .OrderByDescending(o => o.OrderDate) 
+                .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
 
             var ordersDtos = orders.Select(o => new OrderDto
@@ -109,6 +111,8 @@ namespace LahanShop.Controllers
                 TotalAmount = o.TotalAmount,
                 Status = o.Status.ToString(),
                 Address = o.Address,
+                CustomerPhone=o.PhoneNumber,
+                CustomerName=o.ContactName,
 
                 Items = o.Items.Select(i => new OrderItemDto
                 {
@@ -122,25 +126,30 @@ namespace LahanShop.Controllers
 
 
             return Ok(ordersDtos);
-            }
+        }
         [HttpGet("all")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IEnumerable<OrderDto>>> GetAllOrders()
         {
             var orders = await _context.Orders
+                .Include(o => o.User) // 1. Обов'язково підтягуємо дані користувача з БД
                 .Include(o => o.Items)
-                .ThenInclude(oi => oi.Product)
-                .OrderByDescending(o => o.OrderDate) // Спочатку нові
+                    .ThenInclude(oi => oi.Product)
+                        .ThenInclude(p => p.Images.OrderBy(i => i.SortOrder))
+                .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
 
-            // Мапимо в DTO (можна винести в окремий метод, щоб не дублювати код)
             var ordersDtos = orders.Select(o => new OrderDto
             {
                 Id = o.Id,
                 OrderDate = o.OrderDate,
                 TotalAmount = o.TotalAmount,
                 Status = o.Status.ToString(),
-                Address = o.Address,
+                Address = o.Address,                
+                // 2. Мапимо дані клієнта (з перевіркою на null)
+                CustomerName = o.ContactName ?? "Невідомий клієнт",                
+                CustomerPhone = o.PhoneNumber ?? "Не вказано",
+
                 Items = o.Items.Select(i => new OrderItemDto
                 {
                     ProductId = i.ProductId,
@@ -153,6 +162,10 @@ namespace LahanShop.Controllers
 
             return Ok(ordersDtos);
         }
+
+        //[HttpGet("{id}")]
+        //[Authorize(Roles = "Admin")]
+
 
         // 2. Змінити статус замовлення
         [HttpPut("{id}/status")]
@@ -172,6 +185,43 @@ namespace LahanShop.Controllers
             }
 
             return BadRequest("Невірний статус");
+        }
+        [HttpPut("{id}/cancel")]
+        [Authorize]
+        public async Task<IActionResult> CancelStatus(int id)
+        {
+            // 1. Обов'язково підтягуємо позиції замовлення (Items), щоб знати, ЩО повертати на склад
+            var order = await _context.Orders
+                .Include(o => o.Items)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (order == null) return NotFound("Замовлення не знайдено");
+
+            // 2. Блокуємо нелогічні дії
+            if (order.Status == OrderStatus.Cancelled)
+                return BadRequest("Це замовлення вже було скасоване раніше");
+
+            if (order.Status == OrderStatus.Shipped)
+                return BadRequest("Не можна скасувати вже доставлене замовлення");
+            
+            foreach (var item in order.Items)
+            {
+                var product = await _context.Products.FindAsync(item.ProductId);
+                if (product != null)
+                {
+                    product.StockQuantity += item.Quantity; 
+                }
+            }
+           
+            order.Status = OrderStatus.Cancelled;
+           
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                Message = "Замовлення скасовано, залишки товарів відновлено на складі",
+                Status = order.Status.ToString()
+            });
         }
     }
 }

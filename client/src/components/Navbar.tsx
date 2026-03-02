@@ -93,10 +93,10 @@ const Navbar = () => {
 
           {/* Права частина */}
           <div className="flex items-center gap-6">
-            <Link to="/about" className="hover:text-blue-600 transition-colors font-medium">
+            <Link to="/about" className="hover:text-blue-600 transition-colors font-medium" onClick={() => window.scrollTo(0, 0)}>
               Про нас
             </Link>
-            <Link to="/info" className="hover:text-blue-600 transition-colors font-medium">
+            <Link to="/info" className="hover:text-blue-600 transition-colors font-medium" onClick={() => window.scrollTo(0, 0)}>
               Додаткова інформація
             </Link>
           </div>

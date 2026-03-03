@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Security.Claims;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace LahanShop.Controllers
 {
@@ -129,14 +130,25 @@ namespace LahanShop.Controllers
         }
         [HttpGet("all")]
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<IEnumerable<OrderDto>>> GetAllOrders()
+        public async Task<ActionResult<PagedResult<OrderDto>>> GetAllOrders(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10)
         {
-            var orders = await _context.Orders
+            var query =  _context.Orders
                 .Include(o => o.User) // 1. Обов'язково підтягуємо дані користувача з БД
                 .Include(o => o.Items)
                     .ThenInclude(oi => oi.Product)
-                        .ThenInclude(p => p.Images.OrderBy(i => i.SortOrder))
+                        .ThenInclude(p => p.Images.OrderBy(i => i.SortOrder));            
+
+            var totalCount = await query.CountAsync();
+            
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            
+            var orders = await query
                 .OrderByDescending(o => o.OrderDate)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
             var ordersDtos = orders.Select(o => new OrderDto
@@ -158,9 +170,18 @@ namespace LahanShop.Controllers
                     Price = i.Price,
                     ImageUrl = i.Product?.Images?.FirstOrDefault()?.Url
                 }).ToList()
-            });
+            }).ToList(); ;
 
-            return Ok(ordersDtos);
+            var result = new PagedResult<OrderDto>
+            {
+                Items = ordersDtos,
+                TotalCount = totalCount,
+                TotalPages = totalPages,
+                CurrentPage = pageNumber,
+                PageSize = pageSize
+            };
+
+            return Ok(result);
         }
 
         //[HttpGet("{id}")]

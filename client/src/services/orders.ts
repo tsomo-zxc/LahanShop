@@ -17,6 +17,13 @@ export interface OrderResponse {
   orderId: number;
 }
 
+export interface PaginatedOrders {
+  items: OrderDto[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
 // Метод створення замовлення
 export const createOrder = async (orderData: CreateOrderDto): Promise<OrderResponse> => {
   const response = await api.post<OrderResponse>('/api/orders', orderData);
@@ -33,8 +40,10 @@ export const getMyOrders = async (): Promise<OrderDto[]> => {
   return response.data;
 };
 
-export const getAllOrdersAdmin = async (): Promise<OrderDto[]> => {
-  const response = await api.get<OrderDto[]>('/api/orders/all');
+export const getAllOrdersAdmin = async (pageNumber: number = 1, pageSize: number = 10): Promise<PaginatedOrders> => {
+  const response = await api.get<PaginatedOrders>('/api/orders/all', {
+    params: { pageNumber, pageSize }
+  });
   return response.data;
 };
 

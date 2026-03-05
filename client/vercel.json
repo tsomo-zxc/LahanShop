@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/sitemap.xml",
-      "destination": "https://lahanshop-api-gnddbbf6fuapefee.swedencentral-01.azurewebsites.net/sitemap"
+      "destination": "https://lahanshop-api-gnddbbf6fuapefee.swedencentral-01.azurewebsites.net/api/sitemap"
     }
   ]
 }

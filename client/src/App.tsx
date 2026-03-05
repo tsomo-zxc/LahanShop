@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { HelmetProvider } from 'react-helmet-async';
 import { CartProvider } from './context/CartContext';
 import Navbar from './components/Navbar';
 import Footbar from './components/Footbar';
@@ -26,9 +27,14 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.tsx';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage.tsx';
 import AboutPage from './pages/AboutPage.tsx';
 import InfoPage from './pages/InfoPage.tsx';
+import NotFound from './pages/errors/NotFound.tsx';
+import AdminRoute from './components/AdminRoute.tsx';
+import Forbidden from './pages/errors/Forbidden.tsx';
+
 
 const App: React.FC = () => {
   return (
+    <HelmetProvider>
     <CartProvider>
       <BrowserRouter>
         <AuthProvider>
@@ -47,17 +53,16 @@ const App: React.FC = () => {
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/info" element={<InfoPage />} />
+                <Route path="/403" element={<Forbidden />} />
 
-                <Route element={<ProtectedRoute requireAdmin={true} />}>
-                  <Route path="/admin" element={<AdminPage />} />
-                  <Route path="/admin/products/new" element={<ProductFormPage />} />
-                  <Route path="/admin/products/edit/:id" element={<ProductFormPage />} />
-                  <Route path="/admin/categories" element={<AdminCategoriesPage />} />
-                  <Route path="/admin/categories/new" element={<CategoryFormPage />} />
-                  <Route path="/admin/categories/edit/:id" element={<CategoryFormPage />} />
-                  <Route path="/admin/orders" element={<AdminOrdersPage />} />
-
-                </Route>
+                {/* Admin Routes */}
+                <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+                <Route path="/admin/products/new" element={<AdminRoute><ProductFormPage /></AdminRoute>} />
+                <Route path="/admin/products/edit/:id" element={<AdminRoute><ProductFormPage /></AdminRoute>} />
+                <Route path="/admin/categories" element={<AdminRoute><AdminCategoriesPage /></AdminRoute>} />
+                <Route path="/admin/categories/new" element={<AdminRoute><CategoryFormPage /></AdminRoute>} />
+                <Route path="/admin/categories/edit/:id" element={<AdminRoute><CategoryFormPage /></AdminRoute>} />
+                <Route path="/admin/orders" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
 
                 <Route element={<ProtectedRoute />}>
                   <Route path="/checkout" element={<CheckoutPage />} />
@@ -65,6 +70,8 @@ const App: React.FC = () => {
                   <Route path="/orders" element={<OrdersPage />} />
 
                 </Route>
+
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
             <Footbar />
@@ -84,6 +91,7 @@ const App: React.FC = () => {
         </AuthProvider>
       </BrowserRouter>
     </CartProvider>
+    </HelmetProvider>
   );
 };
 

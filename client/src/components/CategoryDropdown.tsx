@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import type { Category } from '../types';
-import { FaBars, FaChevronRight } from 'react-icons/fa';
+import { FaBars, FaChevronRight, FaCar } from 'react-icons/fa';
 import api from '../services/axiosInstance';
 
 // --- РЕКУРСИВНИЙ КОМПОНЕНТ ---
@@ -38,12 +38,14 @@ const CategoryItem = ({ category, depth = 0 }: { category: Category; depth?: num
       className="relative"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      title="Каталог"
     >
       {/* Контейнер посилання та кнопки розгортання для мобільних */}
       <div className={`flex items-center justify-between transition first:rounded-t-lg last:rounded-b-lg ${isHovered || isMobileOpen ? 'bg-blue-50 text-blue-600' : 'text-gray-700'}`}>
         <Link
           to={`/category/${category.id}`}
           className={`flex-grow px-5 py-3 ${getDepthStyles()}`}
+          title={category.name}
         >
           {category.name}
         </Link>
@@ -148,15 +150,39 @@ const CategoryDropdown = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%)] left-0 w-[280px] sm:w-72 max-h-[80vh] md:max-h-none overflow-y-auto overflow-x-hidden md:overflow-visible bg-white shadow-2xl rounded-lg border border-gray-100 py-3 z-50">
+        <div className="absolute top-[calc(100%)] left-0 w-[280px] sm:w-[320px] max-h-[80vh] md:max-h-none overflow-y-auto overflow-x-hidden md:overflow-visible bg-white shadow-2xl rounded-lg border border-gray-100 py-3 z-50">
           {loading ? (
             <div className="px-5 py-4 text-gray-500 text-center">Завантаження...</div>
           ) : (
-            <>
+            <div className="flex flex-col">
               {categories.map((category) => (
-                <CategoryItem key={category.id} category={category} />
+                <div key={category.id} className="mb-2 border-b border-gray-100 last:border-0 pb-2 last:pb-0">
+                  <Link
+                    to={`/category/${category.id}`}
+                    className="flex items-center px-5 py-2 text-gray-800 hover:text-blue-600 transition-colors"
+                    title={category.name}
+                  >
+                    {category.id === 1 && (
+                      <img src="/Ford_logo.svg" alt="Ford" className="w-8 h-8 mr-3 object-contain" />
+                    )}
+                    {category.id === 2 && (
+                      <img src="/Renault_logo.svg" alt="Renault" className="w-8 h-8 mr-3 object-contain" />
+                    )}
+                    {category.id === 3 && (
+                      <FaCar className="w-8 h-8 mr-3 text-gray-500" />
+                    )}
+                    <span className="text-lg font-bold tracking-wide uppercase">
+                      {category.name}
+                    </span>
+                  </Link>
+                  <div className="flex flex-col">
+                    {category.children?.map(child => (
+                      <CategoryItem key={child.id} category={child} depth={1} />
+                    ))}
+                  </div>
+                </div>
               ))}
-            </>
+            </div>
           )}
         </div>
       )}

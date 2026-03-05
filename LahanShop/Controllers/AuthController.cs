@@ -13,9 +13,7 @@ using System.Threading.Tasks;
 
 namespace LahanShop.Controllers
 {
-    // --- ДОДАЄМО DTO ДЛЯ ПІДТВЕРДЖЕННЯ ПОШТИ ---
-    
-
+        
     [Route("api/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase

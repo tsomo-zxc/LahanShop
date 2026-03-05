@@ -126,7 +126,7 @@ const CategoryPage = () => {
 
       {/* Хлібні крихти */}
       <nav className="flex items-center text-sm text-gray-500 mb-6 overflow-x-auto whitespace-nowrap pb-2">
-        <Link to="/" className="flex items-center hover:text-blue-600 transition-colors">
+        <Link to="/" className="flex items-center hover:text-blue-600 transition-colors" title="На головну">
           <FaHome className="mr-2" /> Головна
         </Link>
 
@@ -136,6 +136,7 @@ const CategoryPage = () => {
             <Link
               to={`/category/${cat.id}`}
               className={`hover:text-blue-600 transition-colors ${index === breadcrumbs.length - 1 ? 'font-bold text-gray-900 pointer-events-none' : ''}`}
+              title={cat.name}
             >
               {cat.name}
             </Link>
@@ -161,19 +162,19 @@ const CategoryPage = () => {
 
       {totalPages > 1 && (
         <div className="mt-12 flex justify-center items-center gap-4 pb-8">
-          <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className={`flex items-center gap-2 px-4 py-2 rounded-lg border font-medium transition-all ${currentPage === 1 ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-blue-500 hover:text-blue-600'}`}>
+          <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className={`flex items-center gap-2 px-4 py-2 rounded-lg border font-medium transition-all ${currentPage === 1 ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-blue-500 hover:text-blue-600'}`} title="Попередня сторінка">
             <FaChevronLeft size={14} /> Попередня
           </button>
 
           <div className="flex items-center gap-2">
             {Array.from({ length: totalPages }, (_, i) => i + 1).slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2)).map((page) => (
-              <button key={page} onClick={() => handlePageChange(page)} className={`w-10 h-10 rounded-lg font-medium transition-all ${currentPage === page ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}>
+              <button key={page} onClick={() => handlePageChange(page)} className={`w-10 h-10 rounded-lg font-medium transition-all ${currentPage === page ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`} title={`Сторінка ${page}`}>
                 {page}
               </button>
             ))}
           </div>
 
-          <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className={`flex items-center gap-2 px-4 py-2 rounded-lg border font-medium transition-all ${currentPage === totalPages ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-blue-500 hover:text-blue-600'}`}>
+          <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className={`flex items-center gap-2 px-4 py-2 rounded-lg border font-medium transition-all ${currentPage === totalPages ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-blue-500 hover:text-blue-600'}`} title="Наступна сторінка">
             Наступна <FaChevronRight size={14} />
           </button>
         </div>

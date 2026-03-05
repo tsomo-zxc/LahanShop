@@ -1,0 +1,12 @@
+# Дозволяємо доступ усім пошуковим ботам
+User-agent: *
+
+# Забороняємо індексувати службові сторінки та адмінку
+Disallow: /admin/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /login/
+
+# Вказуємо шлях до нашої динамічної карти сайту на бекенді
+# ЗАМІНИ ЦЕ ПОСИЛАННЯ НА РЕАЛЬНУ АДРЕСУ ТВОГО C# БЕКЕНДУ!
+Sitemap: https://lahanshop-api-gnddbbf6fuapefee.swedencentral-01.azurewebsites.net/sitemap.xml

@@ -5,6 +5,7 @@ import api, { productService } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { CURRENCY_FORMATTER, API_BASE_URL } from '../constants';
 import { FaShoppingCart, FaHome, FaAngleRight, FaBuilding } from 'react-icons/fa';
+import { Helmet } from 'react-helmet-async';
 
 const ProductDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -95,17 +96,51 @@ const ProductDetails: React.FC = () => {
 
   if (!product) return null;
 
+  const cleanDesc = product.description
+    ? product.description.substring(0, 60).trim() + "... "
+    : "";
+
+  // 2. Формуємо потужний гібридний SEO-опис (до 150-160 символів)
+  const seoDescription = `Оригінал Б/В ${product.name}. ${cleanDesc} Доставка по Україні | Авторозбірка Стадники.`;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": product.name,
+    "image": selectedImage,
+    "description": product.description,
+    "offers": {
+      "@type": "Offer",
+      "priceCurrency": "UAH",
+      "price": product.price,
+      "availability": product.stockQuantity > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 pb-12 pt-32 max-w-7xl">
+      <Helmet>
+        {/* 1. Надійна передача рядка в title */}
+        <title>{`${product.name} Б/В | Авторозбірка Стадники`}</title>
+
+        <meta name="description" content={seoDescription} />
+        <meta property="og:title" content={`${product.name} Б/В | Авторозбірка Стадники`} />
+        <meta property="og:description" content={seoDescription} />
+        <meta property="og:image" content={selectedImage} />
+
+        {/* 2. Правильна передача JSON-скрипта в React */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      </Helmet>
+
       {/* Хлібні крихти */}
       <nav className="flex items-center text-sm text-gray-500 mb-6 overflow-x-auto whitespace-nowrap pb-2">
-        <Link to="/" className="flex items-center hover:text-blue-600 transition-colors">
+        <Link title="Головна сторінка" to="/" className="flex items-center hover:text-blue-600 transition-colors">
           <FaHome className="mr-2" /> Головна
         </Link>
         {breadcrumbs.map((cat) => (
           <div key={cat.id} className="flex items-center">
             <FaAngleRight className="mx-2 text-gray-400 flex-shrink-0" />
             <Link
+              title={cat.name}
               to={`/category/${cat.id}`}
               className="hover:text-blue-600 transition-colors"
             >
@@ -133,6 +168,7 @@ const ProductDetails: React.FC = () => {
               <img
                 src={selectedImage}
                 alt={product.name}
+                title={product.name}
                 className="w-full h-full object-contain object-center hover:scale-105 transition-transform duration-500"
               />
             </div>
@@ -180,15 +216,16 @@ const ProductDetails: React.FC = () => {
               </h3>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
-                  { id: 'nova', name: 'Нова Пошта', logo: '/Nova_Poshta_logo.svg' },
-                  { id: 'ukr', name: 'Укрпошта', logo: '/site-ua-logo.svg' },
-                  { id: 'meest', name: 'Meest', logo: '/Meest_Corporation_logo.svg' },
-                  { id: 'delivery', name: 'Delivery', logo: '/delGroup_logo.svg', hasBg: true },
+                  { id: 'nova', name: 'Нова Пошта', logo: '/Nova_Poshta_logo.svg', title: 'Нова Пошта' },
+                  { id: 'ukr', name: 'Укрпошта', logo: '/site-ua-logo.svg', title: 'Укрпошта' },
+                  { id: 'meest', name: 'Meest', logo: '/Meest_Corporation_logo.svg', title: 'Meest' },
+                  { id: 'delivery', name: 'Delivery', logo: '/delGroup_logo.svg', hasBg: true, title: 'Delivery' },
                 ].map((c) => (
                   <div key={c.id} className="bg-white border border-gray-100 rounded-lg p-3 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow-md transition-shadow">
                     <img
                       src={c.logo}
                       alt={c.name}
+                      title={c.title}
                       className={`h-6 w-auto object-contain ${c.hasBg ? 'bg-[#009A44] px-1.5 py-0.5 rounded' : ''}`}
                     />
                     <span className="text-[10px] font-bold text-gray-500 text-center uppercase tracking-wide">

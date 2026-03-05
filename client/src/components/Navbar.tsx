@@ -81,11 +81,11 @@ const Navbar = () => {
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-2 flex justify-between items-center text-xs text-gray-600">
           {/* Ліва частина */}
           <div className="flex items-center gap-6">
-            <a href="tel:+380991234567" className="flex items-center gap-1.5 hover:text-blue-600 transition-colors">
+            <a href="tel:+380991234567" className="flex items-center gap-1.5 hover:text-blue-600 transition-colors" title="Зателефонувати">
               <FaPhoneAlt />
               <span>+38 (099) 123-45-67</span>
             </a>
-            <a href="tel:+380987654321" className="flex items-center gap-1.5 hover:text-blue-600 transition-colors">
+            <a href="tel:+380987654321" className="flex items-center gap-1.5 hover:text-blue-600 transition-colors" title="Зателефонувати">
               <FaPhoneAlt />
               <span>+38 (098) 765-43-21</span>
             </a>
@@ -93,10 +93,10 @@ const Navbar = () => {
 
           {/* Права частина */}
           <div className="flex items-center gap-6">
-            <Link to="/about" className="hover:text-blue-600 transition-colors font-medium" onClick={() => window.scrollTo(0, 0)}>
+            <Link to="/about" className="hover:text-blue-600 transition-colors font-medium" title="Про нас" onClick={() => window.scrollTo(0, 0)}>
               Про нас
             </Link>
-            <Link to="/info" className="hover:text-blue-600 transition-colors font-medium" onClick={() => window.scrollTo(0, 0)}>
+            <Link to="/info" className="hover:text-blue-600 transition-colors font-medium" title="Додаткова інформація" onClick={() => window.scrollTo(0, 0)}>
               Додаткова інформація
             </Link>
           </div>
@@ -106,7 +106,7 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-0 min-h-[5rem] sm:h-32 flex flex-wrap items-center justify-between gap-y-3 gap-x-4 sm:gap-8">
 
         {/* 1. Логотип */}
-        <Link to="/" className="flex-shrink-0 flex items-center order-1" onClick={closeMenu}>
+        <Link to="/" className="flex-shrink-0 flex items-center order-1" title='Логотип' onClick={closeMenu}>
           <div className="flex flex-col">
             <span className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight uppercase leading-none">
               Авторозбірка
@@ -137,6 +137,7 @@ const Navbar = () => {
               <button
                 type="submit"
                 className="absolute right-1.5 sm:right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 text-white p-1.5 rounded-full hover:bg-blue-700 transition-colors block"
+                title="Шукати"
               >
                 <FaSearch size={14} className="sm:w-4 sm:h-4" />
               </button>
@@ -152,6 +153,7 @@ const Navbar = () => {
             to="/cart"
             className="relative text-gray-600 hover:text-blue-600 transition-colors p-2"
             onClick={closeMenu}
+            title="Кошик"
           >
             <FaShoppingCart size={24} />
             {totalItems > 0 && (
@@ -166,6 +168,7 @@ const Navbar = () => {
             <button
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-blue-600 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              title="Меню користувача"
             >
               <FaUser size={20} />
             </button>
@@ -197,6 +200,7 @@ const Navbar = () => {
                           to="/admin/orders"
                           className="flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                           onClick={closeMenu}
+                          title="Управління замовленнями"
                         >
                           <div className="flex items-center">
                             <FaTools className="mr-3 text-gray-400" />
@@ -216,6 +220,7 @@ const Navbar = () => {
                           to="/admin"
                           className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                           onClick={closeMenu}
+                          title="Панель товарів"
                         >
                           <FaTools className="mr-3 text-blue-500" />
                           Панель товарів
@@ -232,6 +237,7 @@ const Navbar = () => {
                       to="/orders"
                       className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                       onClick={closeMenu}
+                      title="Мої замовлення"
                     >
                       <FaBoxOpen className="mr-3 text-gray-400" /> Мої замовлення
                     </Link>
@@ -244,6 +250,7 @@ const Navbar = () => {
                         closeMenu();
                       }}
                       className="w-full flex items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                      title="Вийти з акаунту"
                     >
                       <FaSignOutAlt className="mr-3" /> Вийти
                     </button>
@@ -259,6 +266,7 @@ const Navbar = () => {
                       to="/login"
                       className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                       onClick={closeMenu}
+                      title="Увійти в акаунт"
                     >
                       <FaSignInAlt className="mr-3 text-gray-400" /> Вхід
                     </Link>
@@ -267,6 +275,7 @@ const Navbar = () => {
                       to="/register"
                       className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                       onClick={closeMenu}
+                      title="Зареєструватися"
                     >
                       <FaUserPlus className="mr-3 text-gray-400" /> Реєстрація
                     </Link>

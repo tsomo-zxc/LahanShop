@@ -29,7 +29,7 @@ namespace LahanShop.Controllers
             }
         }
 
-        [HttpGet("/sitemap.xml")]
+        [HttpGet("/api/sitemap")]
         public async Task<IActionResult> GenerateSitemap()
         {
             XNamespace xmlns = "http://www.sitemaps.org/schemas/sitemap/0.9";

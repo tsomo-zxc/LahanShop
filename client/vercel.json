@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/"
+      "source": "/sitemap.xml",
+      "destination": "https://lahanshop-api-gnddbbf6fuapefee.swedencentral-01.azurewebsites.net/sitemap.xml"
     }
   ]
 }

@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { HelmetProvider } from 'react-helmet-async';
 import { CartProvider } from './context/CartContext';
 import Navbar from './components/Navbar';
 import Footbar from './components/Footbar';
@@ -34,7 +33,7 @@ import Forbidden from './pages/errors/Forbidden.tsx';
 
 const App: React.FC = () => {
   return (
-    <HelmetProvider>
+
     <CartProvider>
       <BrowserRouter>
         <AuthProvider>
@@ -91,7 +90,7 @@ const App: React.FC = () => {
         </AuthProvider>
       </BrowserRouter>
     </CartProvider>
-    </HelmetProvider>
+
   );
 };
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaChevronDown } from 'react-icons/fa';
+import SEO from '../components/SEO';
 
 interface AccordionItemProps {
   title: string;
@@ -17,16 +18,14 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ title, content }) => {
       >
         <span className="text-lg font-medium text-gray-800">{title}</span>
         <FaChevronDown
-          className={`text-gray-500 transition-transform duration-300 ${
-            isOpen ? 'rotate-180' : ''
-          }`}
+          className={`text-gray-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''
+            }`}
         />
       </button>
 
       <div
-        className={`grid transition-all duration-300 ease-in-out ${
-          isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-        }`}
+        className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+          }`}
       >
         <div className="overflow-hidden">
           <div className="p-6 border-t border-gray-100 bg-gray-50">
@@ -59,11 +58,16 @@ const InfoPage: React.FC = () => {
 
   return (
     <div className="min-h-screen py-24 px-4 sm:px-6 lg:px-8 bg-white">
+      <SEO
+        title="Доставка, Оплата та Гарантії"
+        description="Доставка, Оплата та Гарантії Авторозбірки Стадники"
+        url="https://lahan-shop.vercel.app/info"
+      />
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl sm:text-4xl font-extrabold text-center text-gray-900 mb-12 tracking-tight">
           Доставка, Оплата та Гарантії
         </h1>
-        
+
         <div className="space-y-4">
           {accordionData.map((item, index) => (
             <AccordionItem key={index} title={item.title} content={item.content} />

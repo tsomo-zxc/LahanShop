@@ -4,6 +4,7 @@ import axios from 'axios';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import api from '../../services/axiosInstance'; // Наш налаштований axios
 import { useAuth } from '../../context/AuthContext'; // Наш контекст
+import SEO from '../../components/SEO';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -107,6 +108,12 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 ">
+      <SEO
+        title="Вхід в акаунт"
+        description="Вхід в акаунт"
+        url="https://lahan-shop.vercel.app/login"
+        robots="noindex, nofollow"
+      />
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">

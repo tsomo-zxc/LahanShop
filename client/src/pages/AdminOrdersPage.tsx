@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import { getAllOrdersAdmin, updateOrderStatus, cancelOrder } from '../services/orders';
 import type { OrderDto } from '../types';
 import { FaSearch, FaUser, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
+import SEO from '../components/SEO';
 
 const AdminOrdersPage = () => {
   const [orders, setOrders] = useState<OrderDto[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<OrderDto[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Стани для пагінації
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -88,6 +89,12 @@ const AdminOrdersPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 pt-36 min-h-screen">
+      <SEO
+        title="Замовлення"
+        description="Замовлення"
+        url="https://lahan-shop.vercel.app/admin/orders"
+        robots="noindex, nofollow"
+      />
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Управління замовленнями</h1>
 

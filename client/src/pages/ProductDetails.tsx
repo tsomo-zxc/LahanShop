@@ -5,7 +5,7 @@ import api, { productService } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { CURRENCY_FORMATTER, API_BASE_URL } from '../constants';
 import { FaShoppingCart, FaHome, FaAngleRight, FaBuilding } from 'react-icons/fa';
-import { Helmet } from 'react-helmet-async';
+import SEO from '../components/SEO';
 
 const ProductDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -118,18 +118,15 @@ const ProductDetails: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 pb-12 pt-32 max-w-7xl">
-      <Helmet>
-        {/* 1. Надійна передача рядка в title */}
-        <title>{`${product.name} Б/В | Авторозбірка Стадники`}</title>
-
-        <meta name="description" content={seoDescription} />
-        <meta property="og:title" content={`${product.name} Б/В | Авторозбірка Стадники`} />
-        <meta property="og:description" content={seoDescription} />
-        <meta property="og:image" content={selectedImage} />
-
-        {/* 2. Правильна передача JSON-скрипта в React */}
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      </Helmet>
+      <SEO
+        title={`${product.name} Б/В | Авторозбірка Стадники`}
+        description={seoDescription}
+        keywords={`купити ${product.name}, ${product.categoryName}, б/в запчастини, авторозбірка`}
+        image={selectedImage}
+        type="product"
+        url={window.location.href}
+        jsonLd={jsonLd}
+      />
 
       {/* Хлібні крихти */}
       <nav className="flex items-center text-sm text-gray-500 mb-6 overflow-x-auto whitespace-nowrap pb-2">

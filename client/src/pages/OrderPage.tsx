@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { getMyOrders, cancelOrder } from '../services/orders';
 import type { OrderDto } from '../types';
 import { FaBoxOpen, FaCalendarAlt, FaMapMarkerAlt, FaMoneyBillWave, FaUser, FaPhone } from 'react-icons/fa';
+import SEO from '../components/SEO';
 
 
 const OrdersPage = () => {
@@ -88,6 +89,10 @@ const OrdersPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 pt-36 min-h-screen max-w-5xl">
+      <SEO
+        title="Мої замовлення"
+        robots="noindex, nofollow"
+      />
       <h1 className="text-3xl font-bold mb-8 text-gray-900 border-b pb-4">Мої замовлення</h1>
 
       {error && <div className="bg-red-100 text-red-700 p-4 rounded mb-6">{error}</div>}

@@ -5,6 +5,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import type { Product } from '../types';
 import type { Category } from '../types'; // Переконайтесь, що цей тип є
 import ProductCard from '../components/ProductCard';
+import SEO from '../components/SEO';
 
 interface PagedResponse {
   items: Product[];
@@ -118,7 +119,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col pt-24 ">
-
+      <SEO />
       {isHomeView && (
         <>
           {/* Hero Section */}
@@ -208,9 +209,9 @@ const Home: React.FC = () => {
         )}
 
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <h1 className="text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">
+          <h2 className="text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">
             {pageTitle}
-          </h1>
+          </h2>
         </div>
 
         <div className="flex-grow">

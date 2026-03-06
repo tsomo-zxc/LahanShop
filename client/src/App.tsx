@@ -29,30 +29,15 @@ import InfoPage from './pages/InfoPage.tsx';
 import NotFound from './pages/errors/NotFound.tsx';
 import AdminRoute from './components/AdminRoute.tsx';
 import Forbidden from './pages/errors/Forbidden.tsx';
-import { Helmet } from 'react-helmet-async';
 
 
 const App: React.FC = () => {
   return (
 
+
     <CartProvider>
       <BrowserRouter>
         <AuthProvider>
-          <Helmet>
-            <title>Авторозбірка Стадники | Б/В Запчастини Ford, Renault та інші</title>
-            <meta name="description" content="Оригінальні та перевірені Б/В запчастини для Ford, Renault та інших авто. Швидка доставка по всій Україні." />
-            <meta name="keywords" content="розбірка авто, Б/В запчастини, авторозбірка, запчастини Ford, запчастини Renault, оригінальні запчастини, купити запчастини Україна, Авторозбірка Стадники" />
-            <meta name="author" content="Авторозбірка Стадники" />
-            <meta name="publisher" content="Авторозбірка Стадники" />
-
-            {/* Open Graph */}
-            <meta property="og:type" content="website" />
-            <meta property="og:title" content="Авторозбірка Стадники | Б/В Запчастини" />
-            <meta property="og:description" content="Оригінальні та перевірені Б/В запчастини для Ford, Renault та інших авто. Швидка доставка по всій Україні." />
-
-            {/* Robots */}
-            <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
-          </Helmet>
           <div className="flex flex-col min-h-screen">
             <Navbar />
             <main className="flex-grow pt-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">

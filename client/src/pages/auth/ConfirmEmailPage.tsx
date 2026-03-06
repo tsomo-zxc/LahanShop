@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { FaCheckCircle, FaTimesCircle, FaSpinner } from 'react-icons/fa';
 import api from '../../services/axiosInstance';
+import SEO from '../../components/SEO';
 
 const ConfirmEmailPage = () => {
     const [searchParams] = useSearchParams();
@@ -45,6 +46,12 @@ const ConfirmEmailPage = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 pt-24">
+            <SEO
+                title="Підтвердження пошти"
+                description="Підтвердження пошти"
+                url="https://lahan-shop.vercel.app/confirm-email"
+                robots="noindex, nofollow"
+            />
             <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md text-center">
                 {status === 'loading' && (
                     <div className="flex flex-col items-center justify-center py-8">

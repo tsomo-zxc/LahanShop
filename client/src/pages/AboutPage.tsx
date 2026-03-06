@@ -1,8 +1,14 @@
 import { FaPhoneAlt, FaEnvelope, FaClock, FaInstagram, FaTelegramPlane, FaMapMarkerAlt } from 'react-icons/fa';
+import SEO from '../components/SEO';
 
 const AboutPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-24 px-4 sm:px-6 lg:px-8 ">
+      <SEO
+        title="Про нас"
+        description="Про нас Авторозбірка Стадники"
+        url="https://lahan-shop.vercel.app/about"
+      />
       <div className="max-w-7xl mx-auto">
         {/* Заголовок та опис */}
         <div className="text-center mb-16">
@@ -16,13 +22,13 @@ const AboutPage = () => {
 
         {/* Сітка на 2 колонки */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          
+
           {/* Ліва колонка: Контакти */}
           <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-100 flex flex-col h-full">
             <h2 className="text-2xl font-bold text-gray-900 mb-8 border-b pb-4">
               Контакти
             </h2>
-            
+
             <div className="space-y-6 flex-grow">
               <div className="flex items-start">
                 <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-xl bg-blue-50 text-blue-600">
@@ -63,15 +69,15 @@ const AboutPage = () => {
                 Ми в соцмережах
               </h3>
               <div className="flex gap-4">
-                <a 
-                  href="#" 
+                <a
+                  href="#"
                   className="flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 text-white hover:scale-110 hover:shadow-lg transition-all duration-300 shadow-md"
                   aria-label="Instagram"
                 >
                   <FaInstagram size={28} />
                 </a>
-                <a 
-                  href="#" 
+                <a
+                  href="#"
                   className="flex items-center justify-center h-14 w-14 rounded-full bg-[#0088cc] text-white hover:scale-110 hover:shadow-lg transition-all duration-300 shadow-md"
                   aria-label="Telegram"
                 >
@@ -86,7 +92,7 @@ const AboutPage = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-8 border-b pb-4">
               Як нас знайти
             </h2>
-            
+
             <div className="flex items-start mb-8">
               <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-xl bg-blue-50 text-blue-600">
                 <FaMapMarkerAlt size={20} />
@@ -114,7 +120,7 @@ const AboutPage = () => {
                 </p>
               </div>
             </div>
-            
+
           </div>
         </div>
       </div>

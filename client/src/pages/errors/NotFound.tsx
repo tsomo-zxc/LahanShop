@@ -1,9 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import SEO from '../../components/SEO';
 
 const NotFound: React.FC = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
+      <SEO
+        title="404 - Сторінка не знайдена"
+        description="404 - Сторінка не знайдена"
+        url="https://lahan-shop.vercel.app/404"
+      />
       <h1 className="text-9xl font-extrabold text-blue-600 mb-4 animate-bounce">
         404
       </h1>

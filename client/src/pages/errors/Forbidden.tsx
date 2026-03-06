@@ -1,10 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaShieldAlt } from 'react-icons/fa';
+import SEO from '../../components/SEO';
 
 const Forbidden: React.FC = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
+      <SEO
+        title="403 - Доступ заборонено"
+        description="403 - Доступ заборонено"
+        url="https://lahan-shop.vercel.app/403"
+      />
       <div className="text-red-500 mb-6 animate-pulse">
         <FaShieldAlt size={120} />
       </div>

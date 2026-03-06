@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import api from '../../services/axiosInstance';
 import { FaEnvelope } from 'react-icons/fa';
+import SEO from '../../components/SEO';
 
 interface IdentityError {
   code: string;
@@ -84,6 +85,12 @@ const RegisterPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 pt-24">
+      <SEO
+        title="Реєстрація"
+        description="Реєстрація"
+        url="https://lahan-shop.vercel.app/register"
+        robots="noindex, nofollow"
+      />
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md">
         {isSuccess ? (
           <div className="text-center py-8">

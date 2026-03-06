@@ -5,6 +5,7 @@ import ProductCard from '../components/ProductCard';
 import type { Product } from '../types';
 import { FaChevronLeft, FaChevronRight, FaHome, FaAngleRight } from 'react-icons/fa';
 import type { Category } from '../types';
+import SEO from '../components/SEO';
 
 interface PagedResponse {
   items: Product[];
@@ -115,9 +116,19 @@ const CategoryPage = () => {
     ? `Пошук у "${currentCategoryName}": ${searchTerm}`
     : currentCategoryName || "Категорія";
 
+  const seoDescription = currentCategoryName
+    ? `Великий вибір запчастин в категорії ${currentCategoryName}. Авторозбірка Стадники пропонує Б/В запчастини відмінної якості з доставкою по всій Україні.`
+    : `Каталог автозапчастин Авторозбірка Стадники.`;
+
   return (
     <div className="container mx-auto px-4 py-16 pt-24 min-h-screen flex flex-col">
-
+      <SEO
+        title={pageTitle}
+        description={seoDescription}
+        keywords={`запчастини ${currentCategoryName}, б/в автозапчастини, авторозбірка стадники, купити запчастини`}
+        url={window.location.href}
+        type="website"
+      />
 
       <div className="text-center mb-4">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">{pageTitle}</h1>

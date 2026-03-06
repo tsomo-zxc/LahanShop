@@ -6,6 +6,7 @@ import { createOrder } from '../services/orders';
 import { searchCities, getWarehouses, } from '../services/novaPoshta';
 import type { City, Warehouse } from '../services/novaPoshta';
 import { FaBuilding, FaMoneyBillWave, FaCreditCard, FaCommentDots, FaInfoCircle, FaExclamationCircle } from 'react-icons/fa';
+import SEO from '../components/SEO';
 
 
 // Типи служб
@@ -194,6 +195,10 @@ const CheckoutPage = () => {
 
     return (
         <div className="container mx-auto px-4 py-8 pt-24 min-h-screen bg-gray-50">
+            <SEO
+                title="Оформлення замовлення"
+                robots="noindex, nofollow"
+            />
             <h1 className="text-3xl font-bold mb-8 text-center text-gray-800">Оформлення замовлення</h1>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">

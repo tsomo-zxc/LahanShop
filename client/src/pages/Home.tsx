@@ -119,7 +119,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col pt-24 ">
-      <SEO />
+      <SEO url="https://lahan-shop.vercel.app/" />
       {isHomeView && (
         <>
           {/* Hero Section */}

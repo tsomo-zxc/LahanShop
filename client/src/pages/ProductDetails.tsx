@@ -119,7 +119,7 @@ const ProductDetails: React.FC = () => {
   return (
     <div className="container mx-auto px-4 pb-12 pt-32 max-w-7xl">
       <SEO
-        title={`${product.name} Б/В | Авторозбірка Стадники`}
+        title={`${product.name} Б/В`}
         description={seoDescription}
         keywords={`купити ${product.name}, ${product.categoryName}, б/в запчастини, авторозбірка`}
         image={selectedImage}

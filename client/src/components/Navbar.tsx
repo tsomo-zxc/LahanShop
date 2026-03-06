@@ -167,10 +167,16 @@ const Navbar = () => {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-blue-600 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-blue-600 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 overflow-hidden"
               title="Меню користувача"
             >
-              <FaUser size={20} />
+              {isAuthenticated && user?.fullName ? (
+                <span className="text-sm font-bold uppercase select-none">
+                  {user.fullName.trim().substring(0, 2)}
+                </span>
+              ) : (
+                <FaUser size={20} />
+              )}
             </button>
 
             {/* Вміст випадаючого меню */}

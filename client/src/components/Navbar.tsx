@@ -172,7 +172,7 @@ const Navbar = () => {
             >
               {isAuthenticated && user?.fullName ? (
                 <span className="text-sm font-bold uppercase select-none">
-                  {user.fullName.trim().substring(0, 2)}
+                  {user.fullName.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('')}
                 </span>
               ) : (
                 <FaUser size={20} />

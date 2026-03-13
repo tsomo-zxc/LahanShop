@@ -1,11 +1,13 @@
 ﻿using LahanShop.Data;
 using LahanShop.DTOs;
 using LahanShop.Models;
+using LahanShop.Services.Email;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Security.Claims;
+using System.Text;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace LahanShop.Controllers
@@ -15,10 +17,14 @@ namespace LahanShop.Controllers
     public class OrdersController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IEmailService _emailService;
+        private readonly IConfiguration _config;
 
-        public OrdersController(AppDbContext context)
+        public OrdersController(AppDbContext context, IConfiguration config, IEmailService emailService)
         {
             _context = context;
+            _config = config;
+            _emailService = emailService;
         }
         // GET: api/orders/count-new
         [HttpGet("count-new")]
@@ -36,6 +42,9 @@ namespace LahanShop.Controllers
         {
             string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            // Дістаємо Email клієнта з його токена авторизації
+            string userEmail = User.FindFirstValue(ClaimTypes.Email);
+
             if (userId == null) return Unauthorized("Користувача не знайдено");
 
             // 1. Створюємо "шапку" замовлення
@@ -49,14 +58,15 @@ namespace LahanShop.Controllers
                 PhoneNumber = dto.PhoneNumber,
                 ContactName = dto.ContactName,
                 Items = new List<OrderItem>()
-
             };
 
             decimal total = 0;
 
+            // Створюємо список спеціально для таблиці в листі (щоб зберегти назви товарів)
+            var emailItems = new List<(string ProductName, int Quantity, decimal Price)>();
+
             foreach (var itemDto in dto.Items)
             {
-
                 var product = await _context.Products.FindAsync(itemDto.ProductId);
 
                 if (product == null)
@@ -80,14 +90,21 @@ namespace LahanShop.Controllers
 
                 order.Items.Add(orderItem);
                 total += orderItem.Price * orderItem.Quantity;
-            }
 
+                // Зберігаємо дані для поштового повідомлення
+                emailItems.Add((product.Name, itemDto.Quantity, product.Price));
+            }
 
             order.TotalAmount = total;
 
-
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
+
+            
+            if (!string.IsNullOrEmpty(userEmail))
+            {
+                _ = SendOrderNotificationsAsync(order, emailItems, userEmail);
+            }
 
             return Ok(new { Message = "Замовлення успішно створено!", OrderId = order.Id });
         }
@@ -244,5 +261,87 @@ namespace LahanShop.Controllers
                 Status = order.Status.ToString()
             });
         }
+
+        private async Task SendOrderNotificationsAsync(Order order, List<(string ProductName, int Quantity, decimal Price)> emailItems, string customerEmail)
+        {
+            try
+            {
+                // 1. Генеруємо HTML-таблицю з купленими товарами
+                var tableBuilder = new StringBuilder();
+                tableBuilder.Append("<table style='width: 100%; max-width: 600px; border-collapse: collapse; font-family: Arial, sans-serif; margin-top: 20px;'>");
+                tableBuilder.Append("<thead><tr style='background-color: #f3f4f6; text-align: left;'>");
+                tableBuilder.Append("<th style='padding: 12px; border: 1px solid #e5e7eb;'>Назва товару</th>");
+                tableBuilder.Append("<th style='padding: 12px; border: 1px solid #e5e7eb; text-align: center;'>К-сть</th>");
+                tableBuilder.Append("<th style='padding: 12px; border: 1px solid #e5e7eb; text-align: right;'>Ціна</th>");
+                tableBuilder.Append("<th style='padding: 12px; border: 1px solid #e5e7eb; text-align: right;'>Сума</th>");
+                tableBuilder.Append("</tr></thead><tbody>");
+
+                foreach (var item in emailItems)
+                {
+                    decimal itemTotal = item.Price * item.Quantity;
+                    tableBuilder.Append("<tr>");
+                    tableBuilder.Append($"<td style='padding: 12px; border: 1px solid #e5e7eb;'>{item.ProductName}</td>");
+                    tableBuilder.Append($"<td style='padding: 12px; border: 1px solid #e5e7eb; text-align: center;'>{item.Quantity} шт.</td>");
+                    tableBuilder.Append($"<td style='padding: 12px; border: 1px solid #e5e7eb; text-align: right;'>{item.Price} грн</td>");
+                    tableBuilder.Append($"<td style='padding: 12px; border: 1px solid #e5e7eb; text-align: right;'><b>{itemTotal} грн</b></td>");
+                    tableBuilder.Append("</tr>");
+                }
+
+                tableBuilder.Append("</tbody><tfoot><tr>");
+                tableBuilder.Append($"<td colspan='3' style='padding: 12px; text-align: right; border: 1px solid #e5e7eb;'><b>Загальна сума до сплати:</b></td>");
+                tableBuilder.Append($"<td style='padding: 12px; border: 1px solid #e5e7eb; text-align: right; color: #dc2626; font-size: 16px;'><b>{order.TotalAmount} грн</b></td>");
+                tableBuilder.Append("</tr></tfoot></table>");
+
+                string orderTableHtml = tableBuilder.ToString();
+
+                // 2. Формуємо лист для КЛІЄНТА
+                string clientSubject = $"Замовлення #{order.Id} прийнято | Авторозбірка Стадники";
+                string clientMessage = $@"
+                <div style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
+                    <h2 style='color: #1f2937;'>Дякуємо за ваше замовлення!</h2>
+                    <p>Вітаємо, <b>{order.ContactName}</b>! Ваше замовлення <b>#{order.Id}</b> успішно оформлено і передано в обробку.</p>
+                    <p>Наш менеджер зателефонує вам на номер <b>{order.PhoneNumber}</b> для підтвердження деталей відправки на адресу: <i>{order.Address}</i>.</p>
+                    
+                    <h3 style='margin-top: 30px; border-bottom: 2px solid #e5e7eb; padding-bottom: 5px;'>Ваше замовлення:</h3>
+                    {orderTableHtml}
+
+                    <p style='margin-top: 30px; font-size: 14px; color: #6b7280;'>
+                        З повагою,<br>
+                        Команда Авторозбірки Стадники
+                    </p>
+                </div>";
+
+                // 3. Формуємо лист для АДМІНІСТРАТОРА
+                string adminSubject = $"🚨 НОВЕ ЗАМОВЛЕННЯ #{order.Id} на суму {order.TotalAmount} грн";
+                string adminMessage = $@"
+                <div style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
+                    <h2 style='color: #dc2626;'>🔥 Увага! Нове замовлення на сайті!</h2>
+                    
+                    <div style='background-color: #f9fafb; padding: 15px; border-left: 4px solid #3b82f6; margin-bottom: 20px;'>
+                        <p style='margin: 0 0 10px 0;'><b>Номер замовлення:</b> #{order.Id}</p>
+                        <p style='margin: 0 0 10px 0;'><b>Клієнт:</b> {order.ContactName}</p>
+                        <p style='margin: 0 0 10px 0;'><b>Телефон:</b> <a href='tel:{order.PhoneNumber}'>{order.PhoneNumber}</a></p>
+                        <p style='margin: 0 0 10px 0;'><b>Email:</b> <a href='mailto:{customerEmail}'>{customerEmail}</a></p>
+                        <p style='margin: 0;'><b>Адреса доставки:</b> {order.Address}</p>
+                    </div>
+
+                    <h3>Що замовили:</h3>
+                    {orderTableHtml}
+                </div>";
+
+                // 4. Відправляємо листи
+                var adminEmail = _config["EmailConfiguration:SenderEmail"];
+
+                await _emailService.SendEmailAsync(customerEmail, clientSubject, clientMessage);
+                await _emailService.SendEmailAsync(adminEmail, adminSubject, adminMessage);
+            }
+            catch (Exception ex)
+            {
+                // Логуємо помилку відправки, щоб замовлення не "впало" через збій пошти
+                Console.WriteLine($"[EMAIL ERROR]: Помилка відправки листів для замовлення #{order.Id}. Деталі: {ex.Message}");
+            }
+        }
     }
+
+
 }

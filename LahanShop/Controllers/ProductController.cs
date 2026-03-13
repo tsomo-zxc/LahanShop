@@ -250,7 +250,7 @@ namespace LahanShop.Controllers
 
         // POST: api/products
         [HttpPost]
-        public async Task<ActionResult<ProductDto>> PostProduct([FromForm] CreateProductDto createDto) // ЗМІНЕНО НА [FromForm]
+        public async Task<ActionResult<ProductDto>> PostProduct([FromForm] CreateProductDto createDto) 
         {
             var category = await _context.Categories.FindAsync(createDto.CategoryId);
             if (category == null) return BadRequest("Категорію не знайдено");

@@ -12,7 +12,7 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // ==============================
-// 1. НАЛАШТУВАННЯ СЕРВІСІВ
+// 1. SERVICE SETTINGS
 // ==============================
 
 builder.Services.AddControllers().AddJsonOptions(options =>
@@ -54,7 +54,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// Налаштування Identity (паролі тощо)
+// SETTINGS Identity (password)
 builder.Services.AddIdentity<User, IdentityRole>(options =>
 {
     options.Password.RequireDigit = true;
@@ -70,7 +70,7 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
 
-// Налаштування JWT
+//  JWT SETTINGS
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -92,7 +92,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Налаштування CORS (Тут ми створюємо політику, але ще не застосовуємо)
+// CORS SETTINGS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactApp", policyBuilder =>
@@ -103,28 +103,28 @@ builder.Services.AddCors(options =>
                      .AllowCredentials(); 
     });
 });
-//Налаштування Email
+
+//EMAIL SETTINGS
 builder.Services.Configure<EmailConfiguration>(builder.Configuration.GetSection("EmailConfiguration"));
 builder.Services.AddScoped<IEmailService, EmailService>();
-//Налаштування картинок
+
+//IMAGE SETTINGS
 builder.Services.AddScoped<IImageService, ImageService>();
 
 var app = builder.Build();
 
 // ==============================
-// 2. ІНІЦІАЛІЗАЦІЯ ДАНИХ (SEEDING)
+// 2. SEEDING
 // ==============================
-// Краще робити це тут, перед запуском пайплайну
+
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
-        var context = services.GetRequiredService<AppDbContext>();
-        // Спочатку ініціалізація структури/товарів
+        var context = services.GetRequiredService<AppDbContext>();        
         LahanShop.Data.DbInitializer.Initialize(context);
-
-        // Потім ролі та адмін (асинхронно)
+        
         await LahanShop.Data.DbInitializer.SeedRolesAndAdminAsync(services);
     }
     catch (Exception ex)
@@ -135,7 +135,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 // ==============================
-// 3. HTTP PIPELINE (ПОРЯДОК ВАЖЛИВИЙ!)
+// 3. HTTP PIPELINE 
 // ==============================
 
 //if (app.Environment.IsDevelopment())
@@ -144,22 +144,20 @@ using (var scope = app.Services.CreateScope())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "LahanShop API v1");
-        // c.EnablePersistAuthorization(); // Увімкни, якщо твоя версія Swagger це підтримує
+        // c.EnablePersistAuthorization(); 
     });
 //}
 
 app.UseHttpsRedirection();
 
-// Статичні файли (щоб картинки працювали) мають йти ДО авторизації
 app.UseStaticFiles();
 
 app.UseRouting();
 
-// CORS має бути МІЖ UseRouting та UseAuthentication
 app.UseCors("ReactApp");
 
-app.UseAuthentication(); // Хто ти?
-app.UseAuthorization();  // Що тобі можна?
+app.UseAuthentication(); 
+app.UseAuthorization();  
 
 app.MapControllers();
 

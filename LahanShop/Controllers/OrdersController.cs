@@ -28,13 +28,14 @@ namespace LahanShop.Controllers
         }
         // GET: api/orders/count-new
         [HttpGet("count-new")]
-        [Authorize(Roles = "Admin")] // Тільки для адміна
+        [Authorize(Roles = "Admin")] 
         public async Task<ActionResult<int>> GetNewOrdersCount()
         {
-            // Рахуємо скільки замовлень мають статус 'New' (0)
+            
             var count = await _context.Orders.CountAsync(o => o.Status == OrderStatus.New);
             return Ok(count);
         }
+
         // POST: api/orders
         [HttpPost]
         [Authorize]
@@ -42,12 +43,11 @@ namespace LahanShop.Controllers
         {
             string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // Дістаємо Email клієнта з його токена авторизації
+            
             string userEmail = User.FindFirstValue(ClaimTypes.Email);
 
             if (userId == null) return Unauthorized("Користувача не знайдено");
-
-            // 1. Створюємо "шапку" замовлення
+            
             var order = new Order
             {
                 UserId = userId,
@@ -61,8 +61,7 @@ namespace LahanShop.Controllers
             };
 
             decimal total = 0;
-
-            // Створюємо список спеціально для таблиці в листі (щоб зберегти назви товарів)
+            
             var emailItems = new List<(string ProductName, int Quantity, decimal Price)>();
 
             foreach (var itemDto in dto.Items)
@@ -79,19 +78,17 @@ namespace LahanShop.Controllers
                     return BadRequest($"Товару '{product.Name}' недостатньо на складі. Доступно: {product.StockQuantity}");
                 }
                 product.StockQuantity -= itemDto.Quantity;
-
-                // Створюємо рядок замовлення
+                
                 var orderItem = new OrderItem
                 {
                     ProductId = product.Id,
                     Quantity = itemDto.Quantity,
-                    Price = product.Price, // Беремо ціну з БАЗИ, а не від клієнта!                  
+                    Price = product.Price,                  
                 };
 
                 order.Items.Add(orderItem);
                 total += orderItem.Price * orderItem.Quantity;
-
-                // Зберігаємо дані для поштового повідомлення
+                
                 emailItems.Add((product.Name, itemDto.Quantity, product.Price));
             }
 
@@ -108,6 +105,8 @@ namespace LahanShop.Controllers
 
             return Ok(new { Message = "Замовлення успішно створено!", OrderId = order.Id });
         }
+
+        // GET: api/orders
         [HttpGet]
         [Authorize]
         public async Task<ActionResult<IEnumerable<OrderDto>>> GetOrders()
@@ -145,6 +144,7 @@ namespace LahanShop.Controllers
 
             return Ok(ordersDtos);
         }
+        // GET: api/orders/
         [HttpGet("all")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<PagedResult<OrderDto>>> GetAllOrders(
@@ -152,7 +152,7 @@ namespace LahanShop.Controllers
             [FromQuery] int pageSize = 10)
         {
             var query =  _context.Orders
-                .Include(o => o.User) // 1. Обов'язково підтягуємо дані користувача з БД
+                .Include(o => o.User) 
                 .Include(o => o.Items)
                     .ThenInclude(oi => oi.Product)
                         .ThenInclude(p => p.Images.OrderBy(i => i.SortOrder));            
@@ -174,8 +174,7 @@ namespace LahanShop.Controllers
                 OrderDate = o.OrderDate,
                 TotalAmount = o.TotalAmount,
                 Status = o.Status.ToString(),
-                Address = o.Address,                
-                // 2. Мапимо дані клієнта (з перевіркою на null)
+                Address = o.Address,           
                 CustomerName = o.ContactName ?? "Невідомий клієнт",                
                 CustomerPhone = o.PhoneNumber ?? "Не вказано",
 
@@ -201,11 +200,12 @@ namespace LahanShop.Controllers
             return Ok(result);
         }
 
+        //TODO
         //[HttpGet("{id}")]
         //[Authorize(Roles = "Admin")]
 
 
-        // 2. Змінити статус замовлення
+        // PUT: api/orders/id/status
         [HttpPut("{id}/status")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateStatusDto dto)
@@ -224,18 +224,18 @@ namespace LahanShop.Controllers
 
             return BadRequest("Невірний статус");
         }
+
+        // PUT: api/orders/id/cancel
         [HttpPut("{id}/cancel")]
         [Authorize]
         public async Task<IActionResult> CancelStatus(int id)
-        {
-            // 1. Обов'язково підтягуємо позиції замовлення (Items), щоб знати, ЩО повертати на склад
+        {            
             var order = await _context.Orders
                 .Include(o => o.Items)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
             if (order == null) return NotFound("Замовлення не знайдено");
-
-            // 2. Блокуємо нелогічні дії
+            
             if (order.Status == OrderStatus.Cancelled)
                 return BadRequest("Це замовлення вже було скасоване раніше");
 
@@ -266,7 +266,7 @@ namespace LahanShop.Controllers
         {
             try
             {
-                // 1. Генеруємо HTML-таблицю з купленими товарами
+                // 1. HTML TABLE
                 var tableBuilder = new StringBuilder();
                 tableBuilder.Append("<table style='width: 100%; max-width: 600px; border-collapse: collapse; font-family: Arial, sans-serif; margin-top: 20px;'>");
                 tableBuilder.Append("<thead><tr style='background-color: #f3f4f6; text-align: left;'>");
@@ -294,7 +294,7 @@ namespace LahanShop.Controllers
 
                 string orderTableHtml = tableBuilder.ToString();
 
-                // 2. Формуємо лист для КЛІЄНТА
+                // 2. LETTER FOR CLIENT
                 string clientSubject = $"Замовлення #{order.Id} прийнято | Авторозбірка Стадники";
                 string clientMessage = $@"
                 <div style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
@@ -311,7 +311,7 @@ namespace LahanShop.Controllers
                     </p>
                 </div>";
 
-                // 3. Формуємо лист для АДМІНІСТРАТОРА
+                // 3. LETTER FOR ADMIN
                 string adminSubject = $"🚨 НОВЕ ЗАМОВЛЕННЯ #{order.Id} на суму {order.TotalAmount} грн";
                 string adminMessage = $@"
                 <div style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
@@ -329,15 +329,14 @@ namespace LahanShop.Controllers
                     {orderTableHtml}
                 </div>";
 
-                // 4. Відправляємо листи
+                // 4. SEND LETTER
                 var adminEmail = _config["EmailConfiguration:SenderEmail"];
 
                 await _emailService.SendEmailAsync(customerEmail, clientSubject, clientMessage);
                 await _emailService.SendEmailAsync(adminEmail, adminSubject, adminMessage);
             }
             catch (Exception ex)
-            {
-                // Логуємо помилку відправки, щоб замовлення не "впало" через збій пошти
+            {                
                 Console.WriteLine($"[EMAIL ERROR]: Помилка відправки листів для замовлення #{order.Id}. Деталі: {ex.Message}");
             }
         }

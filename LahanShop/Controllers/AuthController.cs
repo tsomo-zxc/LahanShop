@@ -5,11 +5,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.IdentityModel.Tokens;
-using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace LahanShop.Controllers
 {
@@ -53,7 +51,7 @@ namespace LahanShop.Controllers
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
             var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
 
-            // ВИПРАВЛЕНО: Прибрано пробіли і додано безпечну перевірку на слеш (/) в кінці
+            
             var frontendUrl = _configuration["ApiConnection:Server"];
             if (!string.IsNullOrEmpty(frontendUrl) && !frontendUrl.EndsWith("/"))
             {
@@ -71,7 +69,7 @@ namespace LahanShop.Controllers
             return Ok(new { Message = "Реєстрація успішна. Перевірте вашу поштову скриньку для підтвердження." });
         }
 
-        
+        // POST: api/auth/confirm-email
         [HttpPost("confirm-email")]
         public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailDto dto)
         {
@@ -131,7 +129,7 @@ namespace LahanShop.Controllers
 
         // POST: /api/auth/forgot-password
         [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword([FromBody] ResendEmailDto dto) // Краще назвати ForgotPasswordDto, але хай буде так
+        public async Task<IActionResult> ForgotPassword([FromBody] ResendEmailDto dto) 
         {
             if (string.IsNullOrEmpty(dto.Email))
                 return BadRequest(new { Message = "Email є обов'язковим." });
@@ -196,8 +194,7 @@ namespace LahanShop.Controllers
             var user = await _userManager.FindByEmailAsync(dto.Email);
             if (user == null)
                 return Unauthorized(new { ErrorCode = "InvalidCredentials", Message = "Невірний email або пароль" });
-
-            // ВИПРАВЛЕНО: 1. Перевірка на блокування акаунта (Brute-Force захист)
+            
             if (await _userManager.IsLockedOutAsync(user))
             {
                 return StatusCode(423, new { ErrorCode = "AccountLocked", Message = "Акаунт тимчасово заблоковано через велику кількість невдалих спроб входу. Спробуйте пізніше." });
@@ -206,7 +203,7 @@ namespace LahanShop.Controllers
             var isPasswordValid = await _userManager.CheckPasswordAsync(user, dto.Password);
             if (!isPasswordValid)
             {
-                // Реєструємо невдалу спробу входу
+                
                 await _userManager.AccessFailedAsync(user);
 
                 if (await _userManager.IsLockedOutAsync(user))
@@ -216,11 +213,9 @@ namespace LahanShop.Controllers
 
                 return Unauthorized(new { ErrorCode = "InvalidCredentials", Message = "Невірний email або пароль" });
             }
-
-            // Якщо пароль правильний — скидаємо лічильник помилок
+            
             await _userManager.ResetAccessFailedCountAsync(user);
-
-            // ВИПРАВЛЕНО: 2. Форматована відповідь для непідтвердженої пошти
+            
             var isEmailConfirmed = await _userManager.IsEmailConfirmedAsync(user);
             if (!isEmailConfirmed)
             {
@@ -238,7 +233,7 @@ namespace LahanShop.Controllers
                 Role = roles.FirstOrDefault() ?? "User"
             });
         }
-
+        
         private async Task<string> GenerateJwtToken(User user)
         {
             var claims = new List<Claim>

@@ -6,8 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace LahanShop.Controllers
-{
-    // [Route] вказує адресу: api/products
+{    
     [Route("api/[controller]")]
     [ApiController]
     public class ProductsController : ControllerBase
@@ -15,8 +14,7 @@ namespace LahanShop.Controllers
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _env;
         private readonly IImageService _imageService;
-
-        // Конструктор: тут ми отримуємо доступ до бази даних (Dependency Injection)
+               
         public ProductsController(AppDbContext context, IWebHostEnvironment env, IImageService imageService)
         {
             _context = context;
@@ -32,8 +30,7 @@ namespace LahanShop.Controllers
 
             foreach (var term in terms)
             {
-                // 1. Точне співпадіння в назві — ДЖЕКПОТ (наприклад, шукали "S24" і в назві є "S24")
-                // Ми додаємо пробіли, щоб не плутати "apple" і "pineapple"
+                // 1. Точне співпадіння в назві — ДЖЕКПОТ           
                 if (nameLower.Contains(" " + term + " ") || nameLower.StartsWith(term + " ") || nameLower.EndsWith(" " + term) || nameLower == term)
                 {
                     score += 50;
@@ -73,7 +70,7 @@ namespace LahanShop.Controllers
                 .Include(p => p.Images)
                 .AsQueryable();
 
-            // 1. Фільтрація по категорії
+            // 1. FILTER BY CATEGORY
             if (categoryId.HasValue)
             {
                 var allCategories = await _context.Categories
@@ -93,7 +90,7 @@ namespace LahanShop.Controllers
                 query = query.Where(p => categoryIdsToSearch.Contains(p.CategoryId));
             }
 
-            // 2. Фільтрація по тексту (SQL частина)
+            // 2. FILTER BY TEXT
             string[]? searchTerms = null;
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
@@ -113,10 +110,10 @@ namespace LahanShop.Controllers
             var totalCount = await query.CountAsync();
             List<Product> products;
 
-            // 3. СОРТУВАННЯ
+            // 3. SORTING
             if (!string.IsNullOrWhiteSpace(searchTerm) && searchTerms != null)
             {
-                // --- ЯКЩО Є ПОШУК ---
+               
                 var rawProducts = await query.ToListAsync();
 
                 products = rawProducts
@@ -125,11 +122,9 @@ namespace LahanShop.Controllers
                         Product = p,
                         Score = CalculateRelevanceScore(p, searchTerms)
                     })
-                    // 👇 СПОЧАТКУ ТІ, ЩО В НАЯВНОСТІ
-                    .OrderByDescending(x => x.Product.StockQuantity > 0)
-                    // ПОТІМ НАЙБІЛЬШ РЕЛЕВАНТНІ
-                    .ThenByDescending(x => x.Score)
-                    // ПОТІМ НОВІШІ
+                    
+                    .OrderByDescending(x => x.Product.StockQuantity > 0)                    
+                    .ThenByDescending(x => x.Score)                    
                     .ThenByDescending(x => x.Product.Id)
 
                     .Skip((page - 1) * pageSize)
@@ -138,19 +133,18 @@ namespace LahanShop.Controllers
                     .ToList();
             }
             else
-            {
-                // --- ЯКЩО ПРОСТО ПЕРЕГЛЯД (БЕЗ ПОШУКУ) ---
+            {                
                 products = await query
-                    // 👇 ГОЛОВНА ЗМІНА ТУТ:
-                    .OrderByDescending(p => p.StockQuantity > 0) // Спочатку True (в наявності), потім False
-                    .ThenByDescending(p => p.Id) // Всередині груп - спочатку нові
+                    
+                    .OrderByDescending(p => p.StockQuantity > 0) 
+                    .ThenByDescending(p => p.Id) 
 
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
             }
 
-            // 4. Формування DTO (без змін)
+            // 4. DTO
             var productDtos = products.Select(p => new ProductDto
             {
                 Id = p.Id,
@@ -183,9 +177,7 @@ namespace LahanShop.Controllers
         // GET: api/products/id
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductDto>> GetProduct(int id)
-        {
-            // Використовуємо Include, щоб підтягнути дані про категорію
-            // FirstOrDefaultAsync шукає перший елемент, що відповідає умові
+        {            
             var product = await _context.Products
                 .Include(p => p.Category)                
                 .Include(p => p.Images.OrderBy(i => i.SortOrder))
@@ -195,8 +187,7 @@ namespace LahanShop.Controllers
             {
                 return NotFound();
             }
-
-            // Мапимо в DTO
+           
             var productDto = new ProductDto
             {
                 Id = product.Id,
@@ -216,23 +207,22 @@ namespace LahanShop.Controllers
 
             return productDto;
         }
+
         // GET: api/categories/5/path        
         [HttpGet("path/{id}")]
         public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategoryPath(int id)
         {
             var path = new List<CategoryDto>();
             var currentId = (int?)id;
-
-            // Цикл: піднімаємось вгору, поки є ParentId
+            
             while (currentId.HasValue)
             {
                 var category = await _context.Categories
-                    .Include(c => c.Parent) // Підтягуємо інфо про батька
+                    .Include(c => c.Parent) 
                     .FirstOrDefaultAsync(c => c.Id == currentId);
 
                 if (category == null) break;
-
-                // Додаємо в ПОЧАТОК списку (бо ми йдемо з кінця)
+                
                 path.Insert(0, new CategoryDto
                 {
                     Id = category.Id,
@@ -240,8 +230,7 @@ namespace LahanShop.Controllers
                     ParentId = category.ParentId,
                     ParentName = category.Parent?.Name
                 });
-
-                // Переходимо на рівень вище
+                
                 currentId = category.ParentId;
             }
 
@@ -263,34 +252,30 @@ namespace LahanShop.Controllers
                 CategoryId = createDto.CategoryId,
                 Specifications = createDto.Specifications,
                 StockQuantity = createDto.StockQuantity,
-                Images = new List<ProductImage>() // Ініціалізуємо список, щоб уникнути помилок
+                Images = new List<ProductImage>() 
             };
-
-            // --- ХМАРНА ЛОГІКА ЗБЕРЕЖЕННЯ ФАЙЛІВ ---
+            // COMPESSING IMAGES
             if (createDto.Images != null && createDto.Images.Any())
             {
                 foreach (var file in createDto.Images)
                 {
                     if (file.Length > 0)
-                    {
-                        // Викликаємо наш новий сервіс. Він сам обріже фото, конвертує у WebP і закине в Azure
+                    {                        
                         var imageUrl = await _imageService.UploadImageAsync(file);
-
-                        // Якщо завантаження пройшло успішно і ми отримали посилання
+                                                
                         if (!string.IsNullOrEmpty(imageUrl))
                         {
-                            // Додаємо пряме посилання з Azure в базу даних
+                            
                             product.Images.Add(new ProductImage { Url = imageUrl });
                         }
                     }
                 }
             }
-            // ---------------------------------------
+            
 
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
-
-            // Формуємо відповідь для фронтенду
+            
             var resultDto = new ProductDto
             {
                 Id = product.Id,
@@ -311,8 +296,7 @@ namespace LahanShop.Controllers
         // DELETE: api/products/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
-        {
-            // Обов'язково завантажуємо товар РАЗОМ із його картинками (.Include)
+        {            
             var product = await _context.Products
                 .Include(p => p.Images)
                 .FirstOrDefaultAsync(p => p.Id == id);
@@ -321,14 +305,12 @@ namespace LahanShop.Controllers
             {
                 return NotFound();
             }
-
-            // 1. Видаляємо всі фізичні файли з Azure
+            
             foreach (var image in product.Images)
             {
                 await _imageService.DeleteImageAsync(image.Url);
             }
-
-            // 2. Видаляємо запис з бази даних (Entity Framework сам видалить записи з таблиці ProductImages завдяки каскадному видаленню)
+            
             _context.Products.Remove(product);
             await _context.SaveChangesAsync();
 
@@ -337,7 +319,7 @@ namespace LahanShop.Controllers
 
         // PUT: api/products/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromForm] CreateProductDto dto) // ЗМІНЕНО НА [FromForm]
+        public async Task<IActionResult> UpdateProduct(int id, [FromForm] CreateProductDto dto)
         {
             var product = await _context.Products
                 .Include(p => p.Images)
@@ -355,7 +337,7 @@ namespace LahanShop.Controllers
             product.StockQuantity = dto.StockQuantity;
             product.Specifications = dto.Specifications;
 
-            // --- ХМАРНА ЛОГІКА ДОДАВАННЯ НОВИХ КАРТИНОК ---
+            // CLOUD ADDING IMAGES
             if (dto.Images != null && dto.Images.Any())
             {
                 foreach (var file in dto.Images)
@@ -380,19 +362,15 @@ namespace LahanShop.Controllers
         // DELETE: api/products/images/5
         [HttpDelete("images/{imageId}")]
         public async Task<ActionResult<ProductImageDto>> DeleteProductImage(int imageId)
-        {
-            // Шукаємо сутність у базі даних
+        {            
             var image = await _context.ProductImages.FindAsync(imageId);
             if (image == null) return NotFound("Картинку не знайдено");
-
-            // 1. Видаляємо фізичний файл з Azure Blob Storage
+           
             await _imageService.DeleteImageAsync(image.Url);
-
-            // 2. Видаляємо запис з бази даних
+            
             _context.ProductImages.Remove(image);
             await _context.SaveChangesAsync();
-
-            // 3. Формуємо та повертаємо DTO видаленої картинки
+            
             var deletedImageDto = new ProductImageDto
             {
                 Id = image.Id,
@@ -408,8 +386,7 @@ namespace LahanShop.Controllers
         {
             if (orderedImageIds == null || !orderedImageIds.Any())
                 return BadRequest("Список ID порожній");
-
-            // 1. Проходимося по кожному ID, який прислав React
+            
             for (int i = 0; i < orderedImageIds.Count; i++)
             {
                 var imageId = orderedImageIds[i];
@@ -417,12 +394,11 @@ namespace LahanShop.Controllers
 
                 if (image != null)
                 {
-                    // 2. Встановлюємо новий порядок (0, 1, 2, 3...)
+                    
                     image.SortOrder = i;
                 }
             }
 
-            // 3. Зберігаємо всі зміни в базу одним махом
             await _context.SaveChangesAsync();
 
             return Ok(new { Message = "Порядок зображень успішно оновлено" });
@@ -433,43 +409,31 @@ namespace LahanShop.Controllers
             int categoryId,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 24)
-        {
-            // --- КРОК 1: Отримуємо ВСІ категорії (це швидко, бо тягнемо тільки ID) ---
-            // Нам треба знати структуру всього дерева, щоб знайти всіх "онуків"
+        {            
             var allCategories = await _context.Categories
                 .Select(c => new { c.Id, c.ParentId })
                 .ToListAsync();
-
-            // --- КРОК 2: Рекурсивно збираємо ID потрібних категорій ---
+            
             var categoryIdsToSearch = new List<int>();
 
-            // Локальна функція для рекурсії
             void AddCategoryAndChildren(int parentId)
             {
-                // Додаємо саму категорію
                 categoryIdsToSearch.Add(parentId);
 
-                // Знаходимо дітей
                 var children = allCategories.Where(c => c.ParentId == parentId);
 
-                // Для кожної дитини запускаємо цю ж функцію (шукаємо її дітей)
                 foreach (var child in children)
                 {
                     AddCategoryAndChildren(child.Id);
                 }
             }
 
-            // Запускаємо процес з вибраної користувачем категорії
             AddCategoryAndChildren(categoryId);
-
-            // Тепер у categoryIdsToSearch є ID: [Електроніка, Ноутбуки, Apple, MacBook...]
-
-            // --- КРОК 3: Запит до товарів (без змін) ---
+            
             var query = _context.Products
                 .Include(p => p.Category)
-                .Where(p => categoryIdsToSearch.Contains(p.CategoryId)); // <--- Шукаємо по повному списку
-
-            // --- КРОК 4: Пагінація та Відповідь (без змін) ---
+                .Where(p => categoryIdsToSearch.Contains(p.CategoryId)); 
+          
             var totalCount = await query.CountAsync();
 
             var products = await query

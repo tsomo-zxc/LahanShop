@@ -10,19 +10,17 @@ namespace LahanShop.Controllers
     public class SitemapController : ControllerBase
     {
         private readonly AppDbContext _context;
-        private readonly IConfiguration _configuration; // Додаємо конфігурацію
-        private readonly string _frontendUrl; // Змінили const на readonly
+        private readonly IConfiguration _configuration; 
+        private readonly string _frontendUrl; 
 
-        // Передаємо IConfiguration у конструктор
+        
         public SitemapController(AppDbContext context, IConfiguration configuration)
         {
             _context = context;
             _configuration = configuration;
-
-            // Витягуємо URL з appsettings.json
+           
             _frontendUrl = _configuration["ApiConnection:Server"];
-
-            // Маленький запобіжник: якщо в налаштуваннях забули вказати URL, щоб код не впав
+           
             if (string.IsNullOrEmpty(_frontendUrl))
             {
                 _frontendUrl = "https://lahan-shop.vercel.app";
@@ -35,7 +33,6 @@ namespace LahanShop.Controllers
             XNamespace xmlns = "http://www.sitemaps.org/schemas/sitemap/0.9";
             var root = new XElement(xmlns + "urlset");
 
-            // 1. Додаємо статичні сторінки (тепер використовуємо _frontendUrl)
             root.Add(CreateUrlElement(xmlns, $"{_frontendUrl}/", "1.0", "daily"));
             root.Add(CreateUrlElement(xmlns, $"{_frontendUrl}/cart", "0.5", "monthly"));
 
@@ -44,8 +41,7 @@ namespace LahanShop.Controllers
                 .ToListAsync();
 
             foreach (var product in products)
-            {
-                // Формуємо посилання на товар
+            {                
                 var productUrl = $"{_frontendUrl}/product/{product.Id}";
                 root.Add(CreateUrlElement(xmlns, productUrl, "0.8", "weekly"));
             }

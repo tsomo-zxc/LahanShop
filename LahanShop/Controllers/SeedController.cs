@@ -3,7 +3,6 @@ using LahanShop.Data;
 using LahanShop.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-// Тут мають бути твої using для моделей (Product, Order, тощо)
 
 [Route("api/[controller]")]
 [ApiController]
@@ -22,7 +21,6 @@ public class SeedController : ControllerBase
     [FromQuery] int productsCount = 20,
     [FromQuery] int ordersCount = 5)
     {
-        // 1. Захист від від'ємних значень
         if (productsCount < 0 || ordersCount < 0)
         {
             return BadRequest("Кількість товарів або замовлень не може бути від'ємною.");
@@ -33,7 +31,6 @@ public class SeedController : ControllerBase
             return Ok(new { Message = "Ви передали нулі. Нічого не було згенеровано." });
         }
 
-        // 2. Перевіряємо, чи є вже категорії (тільки якщо будемо генерувати товари)
         if (productsCount > 0)
         {
             var categories = await _context.Categories.ToListAsync();
@@ -49,7 +46,6 @@ public class SeedController : ControllerBase
                 await _context.SaveChangesAsync();
             }
 
-            // Генерація ТОВАРІВ
             var productFaker = new Faker<Product>("uk")
                 .RuleFor(p => p.Name, f => f.Commerce.ProductName())
                 .RuleFor(p => p.Description, f => f.Commerce.ProductDescription())
@@ -64,17 +60,14 @@ public class SeedController : ControllerBase
 
             var fakeProducts = productFaker.Generate(productsCount);
             _context.Products.AddRange(fakeProducts);
-            await _context.SaveChangesAsync(); // Зберігаємо, щоб вони отримали ID
+            await _context.SaveChangesAsync(); 
         }
 
-        // 3. Генерація ЗАМОВЛЕНЬ
         if (ordersCount > 0)
         {
-            // 🔥 ГОЛОВНА ЗМІНА: Дістаємо всі товари, які зараз є в базі 
-            // (це будуть старі товари + ті, що ми щойно згенерували вище)
+           
             var availableProducts = await _context.Products.ToListAsync();
 
-            // Захист: якщо товарів у базі взагалі немає, ми не можемо створити замовлення
             if (!availableProducts.Any())
             {
                 return BadRequest("У базі немає жодного товару! Неможливо створити замовлення. Згенеруйте спочатку товари.");
@@ -95,7 +88,6 @@ public class SeedController : ControllerBase
                     var itemsCount = f.Random.Int(1, 3);
                     for (int i = 0; i < itemsCount; i++)
                     {
-                        // 🔥 Тепер вибираємо випадковий товар із загального списку бази!
                         var randomProduct = f.PickRandom(availableProducts);
                         var qty = f.Random.Int(1, 5);
                         orderItems.Add(new OrderItem
@@ -110,7 +102,6 @@ public class SeedController : ControllerBase
 
             var fakeOrders = orderFaker.Generate(ordersCount);
 
-            // Підраховуємо TotalAmount для кожного замовлення
             foreach (var order in fakeOrders)
             {
                 order.TotalAmount = order.Items.Sum(i => i.Price * i.Quantity);
@@ -120,7 +111,6 @@ public class SeedController : ControllerBase
             await _context.SaveChangesAsync();
         }
 
-        // Робимо повідомлення динамічним, щоб воно показувало реальні цифри
         return Ok(new { Message = $"Успішно згенеровано {productsCount} товарів та {ordersCount} замовлень!" });
     }
 }

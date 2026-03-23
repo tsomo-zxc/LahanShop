@@ -1,8 +1,5 @@
 ﻿using LahanShop.Data;
 using LahanShop.DTOs;
-using LahanShop.Migrations;
-using LahanShop.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,7 +16,7 @@ namespace LahanShop.Controllers
             _context = context;
         }
 
-        
+        // GET: api/categoryspecs
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CategorySpecificationDto>>> GetSpecifications()
         {
@@ -36,7 +33,7 @@ namespace LahanShop.Controllers
             return Ok(SpecDto);
 
         }
-
+        // GET: api/categoryspecs/category/id
         [HttpGet("category/{categoryId}")]
         public async Task<ActionResult<IEnumerable<CategorySpecificationDto>>> GetSpecsByCategory(int categoryId)
         {
@@ -53,7 +50,7 @@ namespace LahanShop.Controllers
 
             return Ok(specDtos);
         }
-
+        // GET: api/categoryspecs/id
         [HttpGet("{id}")]
         public async Task<ActionResult<CategorySpecificationDto>> GetSpecification (int id)
         {
@@ -71,7 +68,7 @@ namespace LahanShop.Controllers
 
         }
 
-
+        // POST: api/categoryspecs
         [HttpPost]
         public async Task<ActionResult<Models.CategorySpecification>> CreateCategorySpec([FromBody] UpdateCategorySpecDto spec)
         {
@@ -85,6 +82,8 @@ namespace LahanShop.Controllers
             return CreatedAtAction(nameof(GetSpecification), new { id = Spec.Id }, Spec);
 
         }
+
+        // PUT: api/categoryspecs/id
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCategorySpec(int id, [FromBody] UpdateCategorySpecDto spec)
         {
@@ -105,7 +104,7 @@ namespace LahanShop.Controllers
             return Ok(new { Message = "Характеристику оновлено" });
         }
 
-
+        // DELETE: api/categoryspecs/id
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCategorySpecification(int id)
         {

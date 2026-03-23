@@ -1,6 +1,6 @@
 ﻿using LahanShop.Data;
 using LahanShop.DTOs;
-using LahanShop.Models; // Не забудьте додати модель
+using LahanShop.Models; 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,7 +16,7 @@ namespace LahanShop.Controllers
             _context = context;
         }
 
-        // GET: api/categories (Ваш метод - залишаємо без змін)
+        // GET: api/categories 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories()
         {
@@ -37,7 +37,7 @@ namespace LahanShop.Controllers
             return Ok(categoryDtos);
         }
 
-        // --- НОВИЙ МЕТОД: Отримання однієї категорії (для форми редагування) ---
+        // GET: api/categories/id
         [HttpGet("{id}")]
         public async Task<ActionResult<CategoryDto>> GetCategory(int id)
         {
@@ -58,7 +58,7 @@ namespace LahanShop.Controllers
             };
         }
 
-        
+        // POST: api/categories
         [HttpPost]
         public async Task<ActionResult<Category>> CreateCategory([FromBody] UpdateCategoryDto dto)
         {
@@ -74,7 +74,7 @@ namespace LahanShop.Controllers
             return CreatedAtAction(nameof(GetCategory), new { id = category.Id }, category);
         }
 
-        // PUT: api/categories/5
+        // PUT: api/categories/id
         [HttpPut("{id}")]        
         public async Task<IActionResult> UpdateCategory(int id, [FromBody] UpdateCategoryDto dto)
         {
@@ -102,14 +102,13 @@ namespace LahanShop.Controllers
             return Ok(new { Message = "Категорію оновлено" });
         }
 
-        // --- НОВИЙ МЕТОД: Видалення (DELETE) ---
+        // DELETE: api/categories/id
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCategory(int id)
         {
             var category = await _context.Categories.FindAsync(id);
             if (category == null) return NotFound();
 
-            // Перевірка: чи є залежні товари або підкатегорії?
             bool hasChildren = await _context.Categories.AnyAsync(c => c.ParentId == id);
             bool hasProducts = await _context.Products.AnyAsync(p => p.CategoryId == id);
 

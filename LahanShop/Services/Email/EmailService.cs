@@ -10,8 +10,7 @@ namespace LahanShop.Services.Email
     public class EmailService : IEmailService
     {
         private readonly EmailConfiguration _emailConfig;
-
-        // Патерн Dependency Injection: .NET сам передасть сюди налаштування з appsettings.json
+        
         public EmailService(IOptions<EmailConfiguration> emailConfig)
         {
             _emailConfig = emailConfig.Value;

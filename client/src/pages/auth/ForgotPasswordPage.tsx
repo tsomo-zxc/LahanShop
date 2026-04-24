@@ -20,8 +20,6 @@ const ForgotPasswordPage = () => {
       setIsSuccess(true);
     } catch (err) {
       if (axios.isAxiosError(err) && err.response) {
-        // Even if user not found, we might want to show success to prevent email enumeration
-        // But let's handle explicit errors just in case
         setError(err.response.data?.message || 'Сталася помилка. Спробуйте пізніше.');
       } else {
         setError('Не вдалося з\'єднатися з сервером.');
@@ -45,7 +43,6 @@ const ForgotPasswordPage = () => {
             Відновлення пароля
           </h2>
         </div>
-
         {isSuccess ? (
           <div className="mt-8 space-y-6">
             <div className="bg-green-50 p-4 rounded-md">

@@ -33,24 +33,24 @@ const CategoryPage = () => {
     setCurrentPage(1);
   }, [id, searchTerm]);
 
-  // 👇 ОСЬ НОВИЙ КОД ДЛЯ ХЛІБНИХ КРИХТ
+  // Breadcrumbs
   useEffect(() => {
     const buildBreadcrumbs = async () => {
       if (!id) return;
       try {
-        // Завантажуємо всі категорії
+        // Loading all categories
         const res = await api.get<Category[]>(`/api/categories`);
         const allCategories = res.data;
 
         const path: Category[] = [];
         let currentId: number | null = parseInt(id);
 
-        // Будуємо ланцюжок від низу до верху
+        // Building a chain from bottom to top
         while (currentId !== null) {
           const category = allCategories.find(c => c.id === currentId);
           if (!category) break;
           path.unshift(category);
-          currentId = category.parentId; // Йдемо до батька
+          currentId = category.parentId;
         }
         setBreadcrumbs(path);
       } catch (error) {
@@ -59,9 +59,8 @@ const CategoryPage = () => {
     };
     buildBreadcrumbs();
   }, [id]);
-  // 👆 КІНЕЦЬ НОВОГО КОДУ
 
-  // Завантаження товарів
+  // Loading products
   useEffect(() => {
     const fetchProducts = async () => {
       if (!id) return;
@@ -78,7 +77,7 @@ const CategoryPage = () => {
         setProducts(response.data.items);
         setTotalPages(response.data.totalPages);
 
-        // Зберігаємо назву категорії з першого товару на випадок, якщо breadcrumbs ще не прогрузились
+        // Saving the category name from the first product in case the breadcrumbs haven't loaded yet
         if (response.data.items.length > 0) {
           setFallbackCategoryName(response.data.items[0].categoryName || "");
         }
@@ -107,7 +106,7 @@ const CategoryPage = () => {
     );
   }
 
-  // Визначення заголовка
+  // Determining the title
   const currentCategoryName = breadcrumbs.length > 0
     ? breadcrumbs[breadcrumbs.length - 1].name
     : fallbackCategoryName;
@@ -135,7 +134,7 @@ const CategoryPage = () => {
         {products.length > 0 && <p className="text-gray-500">Сторінка {currentPage} з {totalPages}</p>}
       </div>
 
-      {/* Хлібні крихти */}
+      {/* Breadcrumbs */}
       <nav className="flex items-center text-sm text-gray-500 mb-6 overflow-x-auto whitespace-nowrap pb-2">
         <Link to="/" className="flex items-center hover:text-blue-600 transition-colors" title="На головну">
           <FaHome className="mr-2" /> Головна

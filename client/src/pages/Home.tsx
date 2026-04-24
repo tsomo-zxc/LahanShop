@@ -3,7 +3,7 @@ import api from '../services/axiosInstance';
 import { FaChevronLeft, FaChevronRight, FaHome, FaAngleRight, FaTruck, FaCreditCard, FaHeadset } from 'react-icons/fa';
 import { useSearchParams, Link } from 'react-router-dom';
 import type { Product } from '../types';
-import type { Category } from '../types'; // Переконайтесь, що цей тип є
+import type { Category } from '../types';
 import ProductCard from '../components/ProductCard';
 import SEO from '../components/SEO';
 
@@ -17,11 +17,10 @@ interface PagedResponse {
 
 const Home: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [breadcrumbs, setBreadcrumbs] = useState<Category[]>([]); // Стан для хлібних крихт
+  const [breadcrumbs, setBreadcrumbs] = useState<Category[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Читаємо параметри з URL
   const [searchParams] = useSearchParams();
   const searchTerm = searchParams.get('search') || '';
   const categoryId = searchParams.get('categoryId') || '';
@@ -30,12 +29,12 @@ const Home: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 8;
 
-  // Скидаємо сторінку на 1, якщо змінився пошук або категорія
+  // Reset page to 1 if search or category changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, categoryId]);
 
-  // 1. ЛОГІКА ХЛІБНИХ КРИХТ (Client-side build)
+  // 1. BREADCRUMBS LOGIC (Client-side build)
   useEffect(() => {
     const buildBreadcrumbs = async () => {
       if (!categoryId) {
@@ -65,7 +64,7 @@ const Home: React.FC = () => {
     buildBreadcrumbs();
   }, [categoryId]);
 
-  // 2. ЗАВАНТАЖЕННЯ ТОВАРІВ
+  // 2. PRODUCT LOADING
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -106,7 +105,7 @@ const Home: React.FC = () => {
 
   if (error) return <div className="text-center py-20 pt-40 text-red-600">{error}</div>;
 
-  // Визначення заголовка
+  // Determine the title
   const currentCategoryName = breadcrumbs.length > 0
     ? breadcrumbs[breadcrumbs.length - 1].name
     : "";
@@ -130,7 +129,6 @@ const Home: React.FC = () => {
               backgroundColor: '#1f2937'
             }}
           >
-            {/* Затемнення поверх картинки, щоб текст добре читався */}
             <div className="absolute inset-0 bg-black opacity-50"></div>
             <div className="container mx-auto text-center relative z-10">
               <h1 className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight drop-shadow-md">
@@ -185,7 +183,7 @@ const Home: React.FC = () => {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8 flex-grow">
 
-        {/* Хлібні крихти (Показуємо тільки якщо ми в категорії) */}
+        {/* Breadcrumbs (Show only if we are in a category) */}
         {breadcrumbs.length > 0 && (
           <nav className="flex items-center text-sm text-gray-500 mb-6 overflow-x-auto whitespace-nowrap pb-2">
             <Link to="/" className="flex items-center hover:text-blue-600 transition-colors" title="На головну">
@@ -195,7 +193,7 @@ const Home: React.FC = () => {
             {breadcrumbs.map((cat, index) => (
               <div key={cat.id} className="flex items-center">
                 <FaAngleRight className="mx-2 text-gray-400 flex-shrink-0" />
-                {/* Клік по крихті веде на пошук у цій категорії */}
+                {/* Click on the crumb leads to search in this category */}
                 <Link
                   to={`/?categoryId=${cat.id}${searchTerm ? `&search=${searchTerm}` : ''}`}
                   className={`hover:text-blue-600 transition-colors ${index === breadcrumbs.length - 1 ? 'font-bold text-gray-900 pointer-events-none' : ''}`}

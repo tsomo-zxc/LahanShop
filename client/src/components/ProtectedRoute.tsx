@@ -8,19 +8,19 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ requireAdmin }: ProtectedRouteProps) => {
     const { isAuthenticated, isAdmin } = useAuth();
 
-    // 1. Перевірка: Чи користувач увійшов?
+    // 1. Check if user is logged in
     if (!isAuthenticated) {
-        // replace означає, що ми не зберігаємо цю спробу в історії браузера
+        // replace means we don't save this attempt in the browser history
         return <Navigate to="/login" replace />;
     }
 
-    // 2. Перевірка: Чи потрібні права Адміна?
+    // 2. Check if admin rights are required
     if (requireAdmin && !isAdmin) {
-        // Якщо юзер спробував зайти в адмінку, але він не адмін -> кидаємо на головну
+        // If the user tried to access the admin panel but is not an admin -> redirect to the main page
         return <Navigate to="/" replace />;
     }
 
-    // 3. Якщо всі перевірки пройдено -> рендеримо дочірні маршрути
+    // 3. If all checks pass -> render child routes
     return <Outlet />;
 };
 

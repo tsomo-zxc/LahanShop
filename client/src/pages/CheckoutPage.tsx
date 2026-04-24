@@ -9,11 +9,11 @@ import { FaBuilding, FaMoneyBillWave, FaCreditCard, FaCommentDots, FaInfoCircle,
 import SEO from '../components/SEO';
 
 
-// Типи служб
+// Carrier types
 type Carrier = 'nova' | 'ukr' | 'meest' | 'delivery';
 type PaymentMethod = 'cod' | 'card';
 
-// Логотипи
+// Logos
 const LOGOS = {
     nova: "public/Nova_Poshta_logo.svg",
     ukr: "public/site-ua-logo.svg",
@@ -26,23 +26,23 @@ const CheckoutPage = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
 
-    // --- 1. ДАНІ КОРИСТУВАЧА ---
+    // --- 1. USER ---
     const [contactName, setContactName] = useState(user?.fullName || '');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [comment, setComment] = useState('');
 
-    // 👇 Стан для помилок валідації
+    // Validation errors
     const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
 
-    // --- 2. НАЛАШТУВАННЯ ДОСТАВКИ ---
+    // --- 2. DELIVERY SETTINGS ---
     const [carrier, setCarrier] = useState<Carrier>('nova');
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod');
 
-    // --- 3. ДАНІ ДЛЯ РУЧНОГО ВВОДУ ---
+    // --- 3. MANUAL INPUT DATA ---
     const [manualCity, setManualCity] = useState('');
     const [manualBranch, setManualBranch] = useState('');
 
-    // --- 4. ДАНІ ДЛЯ НОВОЇ ПОШТИ (API) ---
+    // --- 4. NOVA POSHTA DATA (API) ---
     const [citySearch, setCitySearch] = useState('');
     const [cities, setCities] = useState<City[]>([]);
     const [selectedCity, setSelectedCity] = useState<City | null>(null);
@@ -59,7 +59,6 @@ const CheckoutPage = () => {
     const cityWrapperRef = useRef<HTMLDivElement>(null);
     const warehouseWrapperRef = useRef<HTMLDivElement>(null);
 
-    // --- ЕФЕКТИ (Ті самі) ---
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (cityWrapperRef.current && !cityWrapperRef.current.contains(event.target as Node)) {
@@ -104,7 +103,7 @@ const CheckoutPage = () => {
     }, [warehouseSearch, warehouses]);
 
 
-    // --- ОБРОБНИКИ НП ---
+    // --- NP HANDLERS ---
     const handleCitySelect = (city: City) => {
         setSelectedCity(city);
         setCitySearch(city.Present);
@@ -118,11 +117,11 @@ const CheckoutPage = () => {
         setIsWarehouseListOpen(false);
     };
 
-    // --- ВІДПРАВКА ЗАМОВЛЕННЯ ---
+    // --- ORDER SUBMISSION ---
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // 1. ВАЛІДАЦІЯ КОНТАКТІВ
+        // 1. CONTACT VALIDATION
         const newErrors: { name?: string; phone?: string } = {};
 
         if (!contactName.trim()) {
@@ -132,10 +131,8 @@ const CheckoutPage = () => {
             newErrors.phone = "Введіть коректний номер телефону";
         }
 
-        // Якщо є помилки - зупиняємось і показуємо їх
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
-            // Прокручуємо вгору, щоб користувач побачив червоні поля
             window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
@@ -145,7 +142,7 @@ const CheckoutPage = () => {
         try {
             let fullAddress = '';
 
-            // 2. ВАЛІДАЦІЯ ДОСТАВКИ
+            // 2. DELIVERY VALIDATION
             if (carrier === 'nova') {
                 const isValidWarehouse = warehouses.some(w => w.Description === warehouseSearch);
                 if (!selectedCity || !isValidWarehouse) {
@@ -165,7 +162,7 @@ const CheckoutPage = () => {
                 fullAddress = `${carrierNames[carrier]}: м. ${manualCity}, ${manualBranch}`;
             }
 
-            // 3. ФОРМУВАННЯ ДАНИХ
+            // 3. DATA FORMATION
             const paymentInfo = paymentMethod === 'cod' ? 'Оплата при отриманні' : 'Оплата карткою';
             const finalComment = `${paymentInfo}. ${comment}`;
 
@@ -203,17 +200,17 @@ const CheckoutPage = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
 
-                {/* --- ЛІВА КОЛОНКА --- */}
+                {/* --- LEFT COLUMN --- */}
                 <div className="lg:col-span-2 space-y-6">
 
-                    {/* 1. КОНТАКТИ */}
+                    {/* 1. CONTACTS */}
                     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                             <span className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm">1</span>
                             Контактні дані
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* ПОЛЕ ІМ'Я */}
+                            {/* NAME FIELD */}
                             <div>
                                 <label className="label">ПІБ Отримувача <span className="text-red-500">*</span></label>
                                 <input
@@ -232,7 +229,7 @@ const CheckoutPage = () => {
                                 )}
                             </div>
 
-                            {/* ПОЛЕ ТЕЛЕФОН */}
+                            {/* PHONE FIELD */}
                             <div>
                                 <label className="label">Телефон <span className="text-red-500">*</span></label>
                                 <input
@@ -254,14 +251,14 @@ const CheckoutPage = () => {
                         </div>
                     </div>
 
-                    {/* 2. ДОСТАВКА */}
+                    {/* 2. DELIVERY */}
                     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                             <span className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm">2</span>
                             Доставка
                         </h2>
 
-                        {/* Вибір служби */}
+                        {/* Carrier selection */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                             {[
                                 { id: 'nova', name: 'Нова Пошта', logo: LOGOS.nova },
@@ -280,9 +277,7 @@ const CheckoutPage = () => {
                                     <img
                                         src={c.logo}
                                         alt={c.name}
-                                        className={`h-8 w-auto object-contain ${
-                                            // Зелений фон для Delivery
-                                            c.id === 'delivery' ? 'bg-[#009A44] px-2 py-1 rounded' : ''
+                                        className={`h-8 w-auto object-contain ${c.id === 'delivery' ? 'bg-[#009A44] px-2 py-1 rounded' : ''
                                             }`}
                                     />
                                     <span className={`text-xs font-bold ${carrier === c.id ? 'text-blue-700' : 'text-gray-500'}`}>
@@ -297,7 +292,7 @@ const CheckoutPage = () => {
                             <span>Доставка <strong>у відділення</strong> обраної служби</span>
                         </div>
 
-                        {/* ВАРІАНТ А: НОВА ПОШТА (API) */}
+                        {/* OPTION A: NOVA POSHTA (API) */}
                         {carrier === 'nova' && (
                             <div className="space-y-4">
                                 <div className="relative" ref={cityWrapperRef}>
@@ -342,7 +337,7 @@ const CheckoutPage = () => {
                             </div>
                         )}
 
-                        {/* ВАРІАНТ Б: РУЧНИЙ ВВІД */}
+                        {/* OPTION B: MANUAL ENTRY */}
                         {carrier !== 'nova' && (
                             <div className="space-y-4 animate-fade-in">
                                 <div className="bg-yellow-50 border border-yellow-200 p-3 rounded text-sm text-yellow-800 flex items-start gap-2">
@@ -377,7 +372,7 @@ const CheckoutPage = () => {
                         )}
                     </div>
 
-                    {/* 3. ОПЛАТА */}
+                    {/* 3. PAYMENT */}
                     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                             <span className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm">3</span>
@@ -397,7 +392,7 @@ const CheckoutPage = () => {
                         </div>
                     </div>
 
-                    {/* 4. КОМЕНТАР */}
+                    {/* 4. COMMENT */}
                     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                         <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
                             <FaCommentDots className="text-gray-400" /> Коментар до замовлення
@@ -412,7 +407,7 @@ const CheckoutPage = () => {
                     </div>
                 </div>
 
-                {/* --- ПРАВА КОЛОНКА --- */}
+                {/* --- RIGHT COLUMN --- */}
                 <div className="lg:col-span-1">
                     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 sticky top-44">
                         <h2 className="text-xl font-semibold mb-4 text-gray-800">Разом до оплати</h2>
@@ -452,7 +447,7 @@ const CheckoutPage = () => {
                 </div>
             </div>
 
-            {/* СТИЛІ */}
+            {/* STYLES */}
             <style>{`
             .input-field {
                 @apply mt-1 block w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all;

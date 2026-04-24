@@ -10,19 +10,19 @@ const AdminOrdersPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Стани для пагінації
+  // Pagination states
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 10;
 
-  // Список можливих статусів (має співпадати з бекендом)
+  // List of possible statuses (must match backend)
   const statusOptions = ['New', 'Processing', 'Shipped', 'Completed', 'Cancelled'];
 
   useEffect(() => {
     loadOrders();
   }, [page]);
 
-  // Пошук по ID, Адресі, Імені або Телефону
+  // Search by ID, Address, Name or Phone
   useEffect(() => {
     const results = orders.filter(order =>
       order.id.toString().includes(searchTerm) ||
@@ -60,17 +60,16 @@ const AdminOrdersPage = () => {
   };
 
   const handleStatusChange = async (orderId: number, newStatus: string) => {
-    // Оптимістичне оновлення інтерфейсу (миттєво міняємо в таблиці)
     const originalOrders = [...orders];
 
     setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
 
     try {
       await updateOrderStatus(orderId, newStatus);
-      // alert("Статус оновлено!"); // Можна додати toast повідомлення
+      // alert("Статус оновлено!"); 
     } catch (error) {
       alert("Помилка оновлення статусу");
-      setOrders(originalOrders); // Відкочуємо назад при помилці
+      setOrders(originalOrders); // Rollback on error
     }
   };
 
@@ -98,7 +97,7 @@ const AdminOrdersPage = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Управління замовленнями</h1>
 
-        {/* Пошук */}
+        {/* Search */}
         <div className="relative">
           <input
             type="text"
@@ -132,7 +131,7 @@ const AdminOrdersPage = () => {
           <tbody>
             {filteredOrders.map((order) => (
               <tr key={order.id}>
-                {/* 1. ID і Дата */}
+                {/* 1. ID and Date */}
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                   <p className="text-gray-900 font-bold whitespace-no-wrap">#{order.id}</p>
                   <p className="text-gray-500 text-xs">
@@ -143,7 +142,7 @@ const AdminOrdersPage = () => {
                   </p>
                 </td>
 
-                {/* 2. Дані доставки */}
+                {/* 2. Delivery Data */}
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2 text-gray-900">
@@ -161,7 +160,7 @@ const AdminOrdersPage = () => {
                   </div>
                 </td>
 
-                {/* 3. Сума і товари */}
+                {/* 3. Total Amount and Products */}
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm w-1/3">
                   <p className="text-gray-900 font-bold mb-2">Загалом: {order.totalAmount} грн</p>
                   <div className="text-xs text-gray-600 flex flex-col gap-1.5 border-t border-gray-100 pt-2">
@@ -177,7 +176,7 @@ const AdminOrdersPage = () => {
                   </div>
                 </td>
 
-                {/* 4. Зміна Статусу */}
+                {/* 4. Status Change */}
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                   <div className="flex flex-col gap-2">
                     <div className="relative">
@@ -211,7 +210,7 @@ const AdminOrdersPage = () => {
           </tbody>
         </table>
 
-        {/* Пагінація */}
+        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center py-4 gap-4 bg-gray-50 border-t border-gray-200">
             <button

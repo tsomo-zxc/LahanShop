@@ -2,22 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 👇 Загортаємо в @layer base. Це каже Tailwind: 
-   "Застосуй це як базові стилі, але дозволь класам перебивати їх" */
 @layer base {
   body {
-    @apply bg-gray-50; /* Використовуємо tailwind-клас замість hex-коду */
+    @apply bg-gray-50;
   }
 
-  input, textarea, select {
-    @apply text-gray-900 caret-black bg-white; 
-    /* caret-black змушує курсор бути чорним */
+  input,
+  textarea,
+  select {
+    @apply text-gray-900 caret-black bg-white;
+
   }
 }
 
-/* 👇 А це "Ядерний варіант". Якщо @layer не допоможе - це спрацює 100% */
-input, textarea, select {
-  caret-color: black !important; 
+input,
+textarea,
+select {
+  caret-color: black !important;
   color: #111827 !important;
 }
 

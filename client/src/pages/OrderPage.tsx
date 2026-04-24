@@ -39,7 +39,7 @@ const OrdersPage = () => {
     }
   };
 
-  // Функція для красивого відображення статусу
+  // Status badge colors
   const getStatusBadge = (status: string) => {
     const styles: { [key: string]: string } = {
       New: 'bg-blue-100 text-blue-800',
@@ -64,7 +64,7 @@ const OrdersPage = () => {
     );
   };
 
-  // --- ВАРІАНТ: ЗАВАНТАЖЕННЯ ---
+  // Loading
   if (isLoading) {
     return (
       <div className="min-h-screen flex justify-center items-center pt-20">
@@ -73,7 +73,7 @@ const OrdersPage = () => {
     );
   }
 
-  // --- ВАРІАНТ: ПОМИЛКА АБО ПУСТО ---
+  // Error or empty
   if (orders.length === 0 && !error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center pt-20 text-center px-4">
@@ -101,7 +101,7 @@ const OrdersPage = () => {
         {orders.map((order) => (
           <div key={order.id} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
 
-            {/* ШАПКА ЗАМОВЛЕННЯ */}
+            {/* Order header */}
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex flex-wrap justify-between items-center gap-4">
               <div>
                 <p className="text-sm text-gray-500 flex items-center gap-2">
@@ -133,7 +133,7 @@ const OrdersPage = () => {
               </div>
             </div>
 
-            {/* ТІЛО ЗАМОВЛЕННЯ (СПИСОК ТОВАРІВ) */}
+            {/* Order body */}
             <div className="p-6">
               <div className="mb-4 flex flex-col gap-2 bg-blue-50 p-4 rounded text-sm text-gray-700">
                 <div className="flex items-center gap-2">
@@ -153,7 +153,7 @@ const OrdersPage = () => {
               <div className="space-y-4">
                 {order.items.map((item) => (
                   <div key={item.productId} className="flex items-center gap-4 border-b border-gray-100 last:border-0 pb-4 last:pb-0">
-                    {/* Картинка */}
+                    {/* Image */}
                     <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden flex-shrink-0 border border-gray-200">
                       {item.imageUrl ? (
                         <img src={item.imageUrl} alt={item.productName} className="w-full h-full object-contain" />
@@ -163,7 +163,7 @@ const OrdersPage = () => {
                     </div>
 
 
-                    {/* Інфо */}
+                    {/* Info */}
                     <div className="flex-grow">
                       <Link to={`/product/${item.productId}`} className="font-medium text-gray-900 hover:text-blue-600 transition">
                         {item.productName}

@@ -1,8 +1,7 @@
-
 // eslint-disable-next-line react-refresh/only-export-components
-import  { createContext, useContext, useState } from 'react';
-import type { ReactNode} from 'react';
-import type { User} from '../types';
+import { createContext, useContext, useState } from 'react';
+import type { ReactNode } from 'react';
+import type { User } from '../types';
 
 interface AuthContextType {
   user: User | null;
@@ -16,7 +15,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-   
+
   const [token, setToken] = useState<string | null>(() => {
     return localStorage.getItem('token');
   });
@@ -30,9 +29,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return null;
     }
   });
- 
 
-  // Функція Входу
+
+  // Login 
   const login = (newToken: string, newUser: User) => {
     setToken(newToken);
     setUser(newUser);
@@ -40,13 +39,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('user', JSON.stringify(newUser));
   };
 
-  // Функція Виходу
+  // Logout
   const logout = () => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    // Опціонально: window.location.href = '/login'; 
+    // Optional: window.location.href = '/login'; 
   };
 
   const isAuthenticated = !!token;
@@ -59,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Хук залишаємо тут, це зручно
+// Hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

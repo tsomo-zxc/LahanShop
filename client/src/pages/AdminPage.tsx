@@ -22,16 +22,15 @@ const AdminPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // 👇 Стан для пошуку
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedTerm, setDebouncedTerm] = useState(''); // Щоб не шукати на кожну букву миттєво
+  const [debouncedTerm, setDebouncedTerm] = useState('');
 
-  // Ефект для затримки пошуку (Debounce)
-  // Користувач пише -> чекаємо 500мс -> оновлюємо debouncedTerm -> йде запит
+  // Effect for search delay (Debounce)
+  // User types -> wait 500ms -> update debouncedTerm -> request is sent
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedTerm(searchTerm);
-      setCurrentPage(1); // При новому пошуку завжди скидаємо на 1 сторінку
+      setCurrentPage(1); // Reset to page 1 on new search
     }, 500);
 
     return () => clearTimeout(handler);
@@ -41,7 +40,6 @@ const AdminPage = () => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        // 👇 Додали &searchTerm=${debouncedTerm}
         const res = await api.get<PagedResponse>(
           `/api/products?page=${currentPage}&pageSize=10&searchTerm=${debouncedTerm}`
         );
@@ -56,7 +54,7 @@ const AdminPage = () => {
     };
 
     fetchProducts();
-  }, [refreshKey, currentPage, debouncedTerm]); // 👇 Додали debouncedTerm у залежності
+  }, [refreshKey, currentPage, debouncedTerm]);
 
   const handleDelete = async (id: number) => {
     if (window.confirm('Видалити цей товар?')) {
@@ -84,13 +82,13 @@ const AdminPage = () => {
         url="https://lahan-shop.vercel.app/admin"
         robots="noindex, nofollow"
       />
-      {/* Верхня панель */}
+      {/* Top panel */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
         <h1 className="text-3xl font-bold">Адмін-панель</h1>
 
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
 
-          {/* 👇 ПОЛЕ ПОШУКУ */}
+          {/* Search field */}
           <div className="relative">
             <input
               type="text"
@@ -116,6 +114,7 @@ const AdminPage = () => {
           <div className="p-10 text-center text-gray-500">Завантаження...</div>
         ) : (
           <>
+            {/* Table */}
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -162,7 +161,7 @@ const AdminPage = () => {
               </tbody>
             </table>
 
-            {/* Пагінація відображається тільки якщо є сторінки */}
+            {/* Pagination is displayed only if there are pages */}
             {totalPages > 1 && (
               <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
                 <span className="text-sm text-gray-700">

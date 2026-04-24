@@ -61,7 +61,7 @@ const AdminCategoriesPage = () => {
         url="https://lahan-shop.vercel.app/admin/categories"
         robots="noindex, nofollow"
       />
-      {/* Кнопка НАЗАД */}
+      {/* Back button */}
       <div className="mb-6">
         <Link to="/admin" className="text-gray-600 hover:text-blue-600 flex items-center gap-2 font-medium">
           <FaArrowLeft /> Назад до Товарів

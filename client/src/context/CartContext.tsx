@@ -18,7 +18,7 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-  // 1. Завантажуємо кошик з LocalStorage при старті
+  // 1. Load cart from LocalStorage at startup
   const [items, setItems] = useState<CartItem[]>(() => {
     try {
       const stored = localStorage.getItem('cart');
@@ -26,8 +26,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       const parsed = JSON.parse(stored);
 
-      // 👇 ГОЛОВНЕ ВИПРАВЛЕННЯ:
-      // Перевіряємо, чи це ДІЙСНО масив. Якщо ні — повертаємо пустий масив.
       return Array.isArray(parsed) ? parsed : [];
 
     } catch (error) {
@@ -36,19 +34,19 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   });
 
-  // 2. Авто-збереження при будь-якій зміні
+  // 2. Auto-save cart to LocalStorage on any change
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(items));
   }, [items]);
 
-  // --- ЛОГІКА ---
+  // --- LOGIC ---
 
   const addToCart = (product: Product) => {
     setItems(currentItems => {
       const existingItem = currentItems.find(item => item.productId === product.id);
 
       if (existingItem) {
-        // Якщо товар вже є, збільшуємо кількість (але не більше ніж на складі)
+        // If the product is already in the cart, increase the quantity (but not more than the stock quantity)
         if (existingItem.quantity >= product.stockQuantity) {
           alert("Більше немає в наявності!");
           return currentItems;
@@ -59,7 +57,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             : item
         );
       } else {
-        // Якщо немає - додаємо новий
+        // If the product is not in the cart, add it
         return [...currentItems, {
           productId: product.id,
           name: product.name,
@@ -84,7 +82,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setItems(currentItems =>
       currentItems.map(item =>
         item.productId === productId
-          // Перевіряємо, чи не перевищує ліміт складу
           ? { ...item, quantity: Math.min(quantity, item.stockQuantity) }
           : item
       )
@@ -95,7 +92,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setItems([]);
   };
 
-  // Підрахунки
+  // Calculations
   const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 

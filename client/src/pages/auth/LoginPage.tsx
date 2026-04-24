@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
-import api from '../../services/axiosInstance'; // Наш налаштований axios
-import { useAuth } from '../../context/AuthContext'; // Наш контекст
+import api from '../../services/axiosInstance';
+import { useAuth } from '../../context/AuthContext';
 import SEO from '../../components/SEO';
 
 const LoginPage = () => {
@@ -13,15 +13,16 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Для повторного відправлення листа
+  // For resending email
   const [showResend, setShowResend] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendStatus, setResendStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [resendMessage, setResendMessage] = useState('');
 
-  const { login } = useAuth(); // Беремо функцію login з контексту
+  const { login } = useAuth();
   const navigate = useNavigate();
 
+  // Resend email cooldown
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     if (resendCooldown > 0) {
@@ -29,7 +30,7 @@ const LoginPage = () => {
     }
     return () => clearTimeout(timer);
   }, [resendCooldown]);
-
+  // Login handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -39,17 +40,17 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      // 1. Відправляємо дані на сервер
+      // 1. Send data to server
       const response = await api.post('/api/auth/login', { email, password });
 
-      // 2. Отримуємо відповідь (DTO з токеном і даними)
+      // 2. Get response (DTO with token and data)
       const { token, email: userEmail, fullName, role } = response.data;
 
-      // 3. Зберігаємо в контекст (це автоматично оновить localStorage)
+      // 3. Save to context (this will automatically update localStorage)
       login(token, { email: userEmail, fullName, role });
 
-      // 4. Перекидаємо користувача
-      // Якщо Адмін -> в адмінку, якщо Юзер -> на головну
+      // 4. Redirect user
+      // If Admin -> to admin, if User -> to home
       if (role === 'Admin') {
         navigate('/admin');
       } else {
@@ -65,17 +66,23 @@ const LoginPage = () => {
         const status = err.response.status;
         const errorCode = err.response.data?.ErrorCode;
 
-        if (status === 403 || errorCode === 'EmailNotConfirmed') {
-          errorMessage = 'Будь ласка, підтвердіть вашу пошту перед входом.';
-          setShowResend(true);
-        } else if (status === 423 || errorCode === 'AccountLocked') {
-          errorMessage = 'Акаунт тимчасово заблоковано через велику кількість невдалих спроб входу.';
-        } else if (status === 401) {
-          errorMessage = 'Невірний email або пароль';
-        } else if (typeof err.response.data === 'string') {
-          errorMessage = err.response.data;
-        } else if (err.response.data?.message) {
-          errorMessage = err.response.data.message;
+        switch (true) {
+          case status === 403 || errorCode === 'EmailNotConfirmed':
+            errorMessage = 'Будь ласка, підтвердіть вашу пошту перед входом.';
+            setShowResend(true);
+            break;
+          case status === 423 || errorCode === 'AccountLocked':
+            errorMessage = 'Акаунт тимчасово заблоковано через велику кількість невдалих спроб входу.';
+            break;
+          case status === 401:
+            errorMessage = 'Невірний email або пароль';
+            break;
+          case typeof err.response.data === 'string':
+            errorMessage = err.response.data;
+            break;
+          case !!err.response.data?.message:
+            errorMessage = err.response.data.message;
+            break;
         }
       }
 
@@ -85,6 +92,7 @@ const LoginPage = () => {
     }
   };
 
+  // Resend email handler
   const handleResendEmail = async () => {
     if (resendCooldown > 0 || !email) return;
 
@@ -95,7 +103,7 @@ const LoginPage = () => {
       await api.post('/api/auth/resend-confirmation-email', { email });
       setResendStatus('success');
       setResendMessage('Лист успішно відправлено! Перевірте пошту.');
-      setResendCooldown(30); // 30 секунд затримки
+      setResendCooldown(30); // 30 seconds delay
     } catch (err) {
       setResendStatus('error');
       if (axios.isAxiosError(err) && err.response?.data?.Message) {
@@ -115,6 +123,7 @@ const LoginPage = () => {
         robots="noindex, nofollow"
       />
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
+        {/* Header */}
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Вхід в акаунт
@@ -123,14 +132,14 @@ const LoginPage = () => {
             Або <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">зареєструйтеся</Link>
           </p>
         </div>
-
+        {/* Form */}
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="flex flex-col gap-2">
               <div className="text-red-600 text-center text-sm bg-red-50 p-3 rounded-lg">
                 {error}
               </div>
-
+              {/* Resend email */}
               {showResend && (
                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 flex flex-col items-center">
                   <p className="text-sm text-blue-800 mb-2 text-center">Не отримали лист?</p>
@@ -157,7 +166,7 @@ const LoginPage = () => {
               )}
             </div>
           )}
-
+          {/* Form fields */}
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <input
@@ -192,7 +201,7 @@ const LoginPage = () => {
               />
             </div>
           </div>
-
+          {/* Forgot password */}
           <div className="flex items-center justify-end">
             <div className="text-sm">
               <Link to="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">

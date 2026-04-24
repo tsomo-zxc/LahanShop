@@ -100,7 +100,7 @@ const ProductDetails: React.FC = () => {
     ? product.description.substring(0, 60).trim() + "... "
     : "";
 
-  // 2. Формуємо потужний гібридний SEO-опис (до 150-160 символів)
+  // SEO
   const seoDescription = `Оригінал Б/В ${product.name}. ${cleanDesc} Доставка по Україні | Авторозбірка Стадники.`;
   const jsonLd = {
     "@context": "https://schema.org",
@@ -128,7 +128,7 @@ const ProductDetails: React.FC = () => {
         jsonLd={jsonLd}
       />
 
-      {/* Хлібні крихти */}
+      {/* Breadcrumbs */}
       <nav className="flex items-center text-sm text-gray-500 mb-6 overflow-x-auto whitespace-nowrap pb-2">
         <Link title="Головна сторінка" to="/" className="flex items-center hover:text-blue-600 transition-colors">
           <FaHome className="mr-2" /> Головна

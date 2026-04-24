@@ -26,7 +26,6 @@ const Navbar = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  // Ref для відстеження кліків поза меню
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,16 +41,15 @@ const Navbar = () => {
         }
       }
     };
-
+    // Reload count of new orders every 30 seconds
     if (isAuthenticated && isAdmin) {
-      fetchCount(); // Перший запуск одразу
-      // Запускаємо перевірку кожні 30 секунд (щоб бачити нові замовлення без оновлення сторінки)
+      fetchCount();
       interval = setInterval(fetchCount, 30000);
     }
 
-    return () => clearInterval(interval); // Чистимо таймер при виході
+    return () => clearInterval(interval);
   }, [isAuthenticated, isAdmin]);
-  // Закриваємо меню при кліку поза ним
+  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -67,11 +65,11 @@ const Navbar = () => {
     if (searchTerm.trim()) {
       navigate(`/?search=${encodeURIComponent(searchTerm)}`);
       setSearchTerm('');
-      setIsUserMenuOpen(false); // Закриваємо меню якщо воно було відкрите
+      setIsUserMenuOpen(false);
     }
   };
 
-  // Функція для закриття меню при кліку на посилання
+  // Close menu when clicking on a link
   const closeMenu = () => setIsUserMenuOpen(false);
 
   return (
@@ -79,7 +77,7 @@ const Navbar = () => {
       {/* Top Bar */}
       <div className="hidden md:flex bg-gray-100 border-b border-gray-200">
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-2 flex justify-between items-center text-xs text-gray-600">
-          {/* Ліва частина */}
+          {/* Left part */}
           <div className="flex items-center gap-6">
             <a href="tel:+380991234567" className="flex items-center gap-1.5 hover:text-blue-600 transition-colors" title="Зателефонувати">
               <FaPhoneAlt />
@@ -91,7 +89,7 @@ const Navbar = () => {
             </a>
           </div>
 
-          {/* Права частина */}
+          {/* Right part */}
           <div className="flex items-center gap-6">
             <Link to="/about" className="hover:text-blue-600 transition-colors font-medium" title="Про нас" onClick={() => window.scrollTo(0, 0)}>
               Про нас
@@ -105,7 +103,7 @@ const Navbar = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-0 min-h-[5rem] sm:h-32 flex flex-wrap items-center justify-between gap-y-3 gap-x-4 sm:gap-8">
 
-        {/* 1. Логотип */}
+        {/* 1. Logo */}
         <Link to="/" className="flex-shrink-0 flex items-center order-1" title='Логотип' onClick={closeMenu}>
           <div className="flex flex-col">
             <span className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight uppercase leading-none">
@@ -117,14 +115,14 @@ const Navbar = () => {
           </div>
         </Link>
 
-        {/* 2 & 3. Каталог і Пошук */}
+        {/* 2 & 3. Catalog and Search */}
         <div className="w-full sm:w-auto sm:flex-1 flex items-center gap-2 sm:gap-4 order-3 sm:order-2 mt-1 sm:mt-0 z-40">
-          {/* 2. Каталог (Дропдаун категорій) */}
+          {/* 2. Catalog (Dropdown categories) */}
           <div className="relative">
             <CategoryDropdown />
           </div>
 
-          {/* 3. Пошук (по центру, розтягується) */}
+          {/* 3. Search (center, expands) */}
           <form onSubmit={handleSearch} className="flex-grow max-w-xl relative">
             <div className="relative">
               <input
@@ -145,10 +143,10 @@ const Navbar = () => {
           </form>
         </div>
 
-        {/* 4. Права частина (Кошик + Меню користувача) */}
+        {/* 4. Right part (Cart + User menu) */}
         <div className="flex items-center gap-4 sm:gap-6 order-2 sm:order-3">
 
-          {/* --- КОШИК --- */}
+          {/* --- CART --- */}
           <Link
             to="/cart"
             className="relative text-gray-600 hover:text-blue-600 transition-colors p-2"
@@ -163,7 +161,7 @@ const Navbar = () => {
             )}
           </Link>
 
-          {/* --- МЕНЮ КОРИСТУВАЧА (DROPDOWN) --- */}
+          {/* --- USER MENU (DROPDOWN) --- */}
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -179,12 +177,12 @@ const Navbar = () => {
               )}
             </button>
 
-            {/* Вміст випадаючого меню */}
+            {/* Dropdown menu content */}
             {isUserMenuOpen && (
               <div className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-2xl py-2 border border-gray-100 ring-1 ring-black ring-opacity-5 transform origin-top-right transition-all z-50">
 
                 {isAuthenticated ? (
-                  /* ВАРІАНТ: АВТОРИЗОВАНИЙ */
+                  /* VARIANT: AUTHORIZED */
                   <>
                     <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
                       <p className="text-xs text-gray-500">Ви увійшли як:</p>
@@ -193,15 +191,15 @@ const Navbar = () => {
 
                     {isAdmin && (
                       <>
-                        {/* Розділювач, щоб відділити особисте від адмінського */}
+                        {/* Separator to separate personal from admin */}
                         <div className="border-t border-gray-100 my-1"></div>
 
-                        {/* Маленький заголовок (опціонально, для краси) */}
+                        {/* Small header (optional, for beauty) */}
                         <p className="px-4 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                           Адмін зона
                         </p>
 
-                        {/* Кнопка "Всі замовлення" */}
+                        {/* Button "All orders" */}
                         <Link
                           to="/admin/orders"
                           className="flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
@@ -213,7 +211,7 @@ const Navbar = () => {
                             Управління замовленнями
                           </div>
 
-                          {/* 👇 ЧЕРВОНИЙ КРУЖЕЧОК (BADGE) */}
+                          {/* RED CIRCLE (BADGE) */}
                           {newOrdersCount > 0 && (
                             <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm animate-pulse">
                               +{newOrdersCount}
@@ -221,7 +219,7 @@ const Navbar = () => {
                           )}
                         </Link>
 
-                        {/* Кнопка "Головна панель" (якщо треба повернутись до створення товарів) */}
+                        {/* Button "Main panel" (if you need to return to creating products) */}
                         <Link
                           to="/admin"
                           className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
@@ -262,7 +260,7 @@ const Navbar = () => {
                     </button>
                   </>
                 ) : (
-                  /* ВАРІАНТ: ГІСТЬ */
+                  /* VARIANT: GUEST */
                   <>
                     <div className="px-4 py-3 text-center border-b border-gray-100">
                       <p className="text-sm font-medium text-gray-600">Особистий кабінет</p>

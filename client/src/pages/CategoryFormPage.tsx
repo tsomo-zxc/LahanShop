@@ -6,7 +6,6 @@ import type { Category } from '../types';
 import { FaTrash, FaPlus, FaArrowLeft } from 'react-icons/fa';
 import SEO from '../components/SEO';
 
-// Інтерфейс для характеристик
 interface CategorySpec {
     id: number;
     name: string;
@@ -18,21 +17,18 @@ const CategoryFormPage = () => {
     const navigate = useNavigate();
     const isEditMode = !!id;
 
-    // Стан форми категорії
     const [formData, setFormData] = useState({
         name: '',
         parentId: ''
     });
 
-    // Стан для списку категорій (для вибору батька)
     const [categories, setCategories] = useState<Category[]>([]);
 
-    // --- НОВІ СТАНИ ДЛЯ ХАРАКТЕРИСТИК ---
     const [specs, setSpecs] = useState<CategorySpec[]>([]);
     const [newSpecName, setNewSpecName] = useState('');
     const [specsLoading, setSpecsLoading] = useState(false);
 
-    // 1. Завантаження даних
+    // 1. Loading data
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -58,16 +54,14 @@ const CategoryFormPage = () => {
             };
             fetchCurrentCategory();
 
-            // 👇 Завантажуємо характеристики для цієї категорії
             fetchSpecs();
         }
     }, [id, isEditMode]);
 
-    // Функція завантаження характеристик
+    // Loading characteristics
     const fetchSpecs = async () => {
         try {
             setSpecsLoading(true);
-            // Використовуємо той метод, що ви додали останнім: api/CategorySpecs/category/{id}
             const res = await api.get(`/api/CategorySpecs/category/${id}`);
             setSpecs(res.data);
         } catch (error) {
@@ -77,7 +71,7 @@ const CategoryFormPage = () => {
         }
     };
 
-    // Збереження самої категорії
+    // Saving category
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const payload = {
@@ -91,7 +85,7 @@ const CategoryFormPage = () => {
                 await api.put(`/api/categories/${id}`, payload, config);
                 alert("Категорію оновлено!");
             } else {
-                // При створенні нової - перекидаємо на редагування, щоб можна було додати спеки
+                // When creating a new one - redirect to edit to add specs
                 const res = await api.post(`/api/categories`, payload, config);
                 const newId = res.data.id;
                 if (window.confirm("Категорію створено! Перейти до додавання характеристик?")) {
@@ -103,13 +97,12 @@ const CategoryFormPage = () => {
         } catch (error) {
             let message = "Щось пішло не так";
 
-            // 3. Перевіряємо, чи це помилка Axios (від сервера)
+            // 3. Checking if it's an Axios error (from server)
             if (axios.isAxiosError(error)) {
-                // Тепер TypeScript знає, що у error є .response
-                // Можна уточнити, що ми чекаємо { message: string } від бекенду
+                // Now TypeScript knows that error has .response
+                // You can specify that we expect { message: string } from the backend
                 message = error.response?.data?.message || error.message;
             }
-            // 4. Перевіряємо, чи це звичайна помилка JS (напр. JSON.parse error)
             else if (error instanceof Error) {
                 message = error.message;
             }
@@ -119,32 +112,32 @@ const CategoryFormPage = () => {
         }
     };
 
-    // --- ЛОГІКА ДОДАВАННЯ ХАРАКТЕРИСТИКИ ---
+    // Adding characteristics
     const handleAddSpec = async () => {
         if (!newSpecName.trim()) return;
 
         try {
             const payload = {
                 Name: newSpecName,
-                CategoryId: parseInt(id!) // ID поточної категорії
+                CategoryId: parseInt(id!)
             };
 
             await api.post(`/api/CategorySpecs`, payload);
 
-            setNewSpecName(''); // Очистити поле
-            fetchSpecs();       // Оновити список
+            setNewSpecName('');
+            fetchSpecs();
         } catch (error) {
             console.error("Не вдалося додати характеристику", error);
         }
     };
 
-    // --- ЛОГІКА ВИДАЛЕННЯ ХАРАКТЕРИСТИКИ ---
+    // Deleting characteristics
     const handleDeleteSpec = async (specId: number) => {
         if (!window.confirm("Видалити цей шаблон?")) return;
 
         try {
             await api.delete(`/api/CategorySpecs/${specId}`);
-            fetchSpecs(); // Оновити список
+            fetchSpecs();
         } catch (error) {
             console.error("Помилка видалення", error);
         }
@@ -160,7 +153,7 @@ const CategoryFormPage = () => {
             </div>
             <h1 className="text-2xl font-bold mb-6">{isEditMode ? 'Редагувати категорію' : 'Нова категорія'}</h1>
 
-            {/* --- БЛОК 1: ОСНОВНА ІНФОРМАЦІЯ --- */}
+            {/*Main Information*/}
             <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow mb-8">
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Назва категорії</label>
@@ -197,7 +190,7 @@ const CategoryFormPage = () => {
                 </button>
             </form>
 
-            {/* --- БЛОК 2: ШАБЛОНИ ХАРАКТЕРИСТИК (Тільки Edit Mode) --- */}
+            {/*Specs patterns*/}
             {isEditMode && (
                 <div className="bg-white p-6 rounded-lg shadow border-t-4 border-blue-500">
                     <h2 className="text-xl font-bold mb-4 text-gray-800">Шаблони характеристик</h2>
@@ -206,7 +199,7 @@ const CategoryFormPage = () => {
                         При створенні товару ці поля з'являться автоматично.
                     </p>
 
-                    {/* Форма додавання */}
+                    {/* Form for adding specs */}
                     <div className="flex gap-2 mb-6">
                         <input
                             type="text"
@@ -224,7 +217,7 @@ const CategoryFormPage = () => {
                         </button>
                     </div>
 
-                    {/* Список існуючих */}
+                    {/* List of specs */}
                     {specsLoading ? (
                         <p>Завантаження...</p>
                     ) : specs.length === 0 ? (

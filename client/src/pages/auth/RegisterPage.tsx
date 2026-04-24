@@ -11,20 +11,28 @@ interface IdentityError {
 }
 
 const RegisterPage = () => {
+  // User input fields
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     password: '',
     confirmPassword: ''
   });
+  
+  // UI state variables
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  /**
+   * Handles the registration form submission.
+   * Validates form data, calls the API, and handles potential errors.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
+    // Basic frontend validation: check if passwords match
     if (formData.password !== formData.confirmPassword) {
       setError("Паролі не співпадають!");
       return;
@@ -33,7 +41,7 @@ const RegisterPage = () => {
     setIsLoading(true);
 
     try {
-      // Відправляємо дані (без confirmPassword)
+      // Send registration data to the API (excluding confirmPassword)
       await api.post('/api/auth/register', {
         email: formData.email,
         password: formData.password,
@@ -42,40 +50,39 @@ const RegisterPage = () => {
 
       setIsSuccess(true);
 
-    } catch (err) { // 1. Прибрали : any (тепер це unknown)
+    } catch (err) {
       console.error(err);
 
-      // 2. Перевіряємо, чи це помилка від Axios
       if (axios.isAxiosError(err) && err.response) {
         const data = err.response.data;
 
-        // 3. Перевіряємо, чи це масив (стандартна відповідь Identity)
-        if (Array.isArray(data)) {
-          // Кастимо data до нашого інтерфейсу
-          const messages = (data as IdentityError[])
-            .map(e => e.description)
-            .join(' ');
-          setError(messages);
-        }
-        // 4. Перевіряємо наявність помилок валідації (ValidationProblemDetails від ASP.NET)
-        else if (data.errors && typeof data.errors === 'object') {
-          const errorMessages = Object.values(data.errors)
-            .flat()
-            .join(' ');
-          setError(errorMessages as string);
-        }
-        // 5. Перевіряємо наявність поля Message або message
-        else if (data.Message || data.message) {
-          setError(data.Message || data.message);
-        }
-        // 6. Якщо це просто рядок
-        else if (typeof data === 'string') {
-          setError(data);
-        } else {
-          setError("Помилка реєстрації. Перевірте введені дані.");
+        switch (true) {
+          case Array.isArray(data): {
+            // Cast data to our expected IdentityError interface and join descriptions
+            const messages = (data as IdentityError[])
+              .map(e => e.description)
+              .join(' ');
+            setError(messages);
+            break;
+          }
+          case Boolean(data.errors && typeof data.errors === 'object'): {
+            const errorMessages = Object.values(data.errors)
+              .flat()
+              .join(' ');
+            setError(errorMessages as string);
+            break;
+          }
+          case Boolean(data.Message || data.message):
+            setError(data.Message || data.message);
+            break;
+          case typeof data === 'string':
+            setError(data);
+            break;
+          default:
+            setError("Помилка реєстрації. Перевірте введені дані.");
+            break;
         }
       } else {
-        // Якщо це не Axios помилка (наприклад, код впаде)
         setError("Сталася невідома помилка");
       }
     } finally {
@@ -93,6 +100,7 @@ const RegisterPage = () => {
       />
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md">
         {isSuccess ? (
+          /* SUCCESS STATE UI */
           <div className="text-center py-8">
             <div className="flex justify-center mb-6">
               <div className="bg-blue-100 p-4 rounded-full">
@@ -113,7 +121,9 @@ const RegisterPage = () => {
             </Link>
           </div>
         ) : (
+          /* REGISTRATION FORM UI */
           <div className="space-y-8">
+            {/* Form Header */}
             <div>
               <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
                 Створити акаунт
@@ -124,8 +134,10 @@ const RegisterPage = () => {
             </div>
 
             <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
+              {/* Error messages display */}
               {error && <div className="text-red-500 text-center text-sm bg-red-50 p-2 rounded">{error}</div>}
 
+              {/* Form Input fields */}
               <input
                 type="text"
                 required

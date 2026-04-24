@@ -7,7 +7,7 @@ const Footbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
 
-          {/* Колонка 1: Логотип та копірайт */}
+          {/* Column 1: Logo and copyright */}
           <div className="flex flex-col space-y-4">
             <Link title="Головна сторінка" to="/" className="inline-block">
               <div className="flex flex-col">
@@ -26,7 +26,7 @@ const Footbar = () => {
             </p>
           </div>
 
-          {/* Колонка 2: Навігація */}
+          {/* Column 2: Navigation */}
           <div className="flex flex-col space-y-3">
             <h3 className="text-lg font-semibold text-gray-200">Навігація</h3>
             <Link title="Головна сторінка" to="/" className="text-gray-400 hover:text-white transition-colors" onClick={() => window.scrollTo(0, 0)}>
@@ -40,11 +40,11 @@ const Footbar = () => {
             </Link>
           </div>
 
-          {/* Колонка 3: Контакти та соцмережі */}
+          {/* Column 3: Contacts and social networks */}
           <div className="flex flex-col space-y-4 items-center md:items-start">
             <h3 className="text-lg font-semibold text-gray-200">Контакти</h3>
 
-            {/* Телефони */}
+            {/* Phones */}
             <div className="flex flex-col space-y-2 text-gray-400 text-center md:text-left">
               <a title="Телефон" href="tel:+380990000000" className="hover:text-white transition-colors">+38 (099) 000-00-00</a>
               <a title="Телефон" href="tel:+380980000000" className="hover:text-white transition-colors">+38 (098) 000-00-00</a>

@@ -3,7 +3,7 @@ import { FaCheckCircle } from 'react-icons/fa';
 import SEO from '../components/SEO';
 
 const OrderSuccessPage = () => {
-  const { id } = useParams(); // Отримуємо ID замовлення з URL
+  const { id } = useParams();
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center pt-20 bg-gray-50 text-center px-4">

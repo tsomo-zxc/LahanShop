@@ -17,7 +17,7 @@ const ResetPasswordPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Якщо немає email або token в URL, показуємо помилку
+  // If there is no email or token in the URL, show an error
   if (!email || !token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -43,7 +43,6 @@ const ResetPasswordPage = () => {
     e.preventDefault();
     setError('');
 
-    // Перевіряємо чи співпадають паролі
     if (newPassword !== confirmPassword) {
       setError('Паролі не співпадають');
       return;
@@ -65,7 +64,7 @@ const ResetPasswordPage = () => {
 
       setSuccess(true);
 
-      // Перенаправляємо на сторінку входу через 2 секунди
+      // Redirect to login page after 2 seconds
       setTimeout(() => {
         navigate('/login');
       }, 2000);

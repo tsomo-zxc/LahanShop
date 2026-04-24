@@ -29,12 +29,12 @@ const CartPage = () => {
             <h1 className="text-3xl font-bold mb-8">Кошик</h1>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* ЛІВА ЧАСТИНА - Список */}
+                {/* Left part - List */}
                 <div className="lg:col-span-2 bg-white rounded-lg shadow overflow-hidden">
                     <div className="p-6 space-y-6">
                         {items.map(item => (
                             <div key={item.productId} className="flex gap-4 items-center border-b pb-4 last:border-0 last:pb-0">
-                                {/* Картинка */}
+                                {/* Image */}
                                 <div className="w-24 h-24 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden">
                                     {item.imageUrl ? (
                                         <img src={item.imageUrl} alt={item.name} className="w-full h-full object-contain" />
@@ -43,7 +43,7 @@ const CartPage = () => {
                                     )}
                                 </div>
 
-                                {/* Інфо */}
+                                {/* Info */}
                                 <div className="flex-grow">
                                     <h3 className="font-semibold text-lg text-gray-800">
                                         <Link to={`/product/${item.productId}`} className="hover:text-blue-600">
@@ -53,7 +53,7 @@ const CartPage = () => {
                                     <p className="text-gray-500 text-sm">Ціна: {item.price} грн</p>
                                 </div>
 
-                                {/* Кількість */}
+                                {/* Quantity */}
                                 <div className="flex items-center gap-2">
                                     <button
                                         onClick={() => updateQuantity(item.productId, item.quantity - 1)}
@@ -71,12 +71,12 @@ const CartPage = () => {
                                     </button>
                                 </div>
 
-                                {/* Сума за товар */}
+                                {/* Total amount for the product */}
                                 <div className="text-right min-w-[80px]">
                                     <div className="font-bold text-lg">{(item.price * item.quantity).toFixed(0)} грн</div>
                                 </div>
 
-                                {/* Видалити */}
+                                {/* Remove */}
                                 <button
                                     onClick={() => removeFromCart(item.productId)}
                                     className="text-red-500 hover:text-red-700 p-2"
@@ -98,7 +98,7 @@ const CartPage = () => {
                     </div>
                 </div>
 
-                {/* ПРАВА ЧАСТИНА - Підсумок */}
+                {/* Right part - Summary */}
                 <div className="lg:col-span-1">
                     <div className="bg-white rounded-lg shadow p-6 sticky top-36">
                         <h2 className="text-xl font-bold mb-4 border-b pb-2">Підсумок замовлення</h2>

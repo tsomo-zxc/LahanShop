@@ -30,12 +30,12 @@ const ProductFormPage = () => {
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [isDragging, setIsDragging] = useState(false);
 
-    // Стани для перетягування (Сортування)
+    // Drag and drop states
     const [dragItemIndex, setDragItemIndex] = useState<number | null>(null);
     const [dragExistingIndex, setDragExistingIndex] = useState<number | null>(null);
     const [isSavingOrder, setIsSavingOrder] = useState(false);
 
-    // 1. ЗАВАНТАЖЕННЯ ДАНИХ (Виправлено парсинг)
+    // 1. Loading data
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -59,17 +59,13 @@ const ProductFormPage = () => {
                         stockQuantity: p.stockQuantity.toString()
                     });
 
-                    // 👇 ВИПРАВЛЕНО: Парсимо об'єкт {"Key":"Value"} назад у масив для форми
                     if (p.specifications) {
                         try {
                             const parsed = JSON.parse(p.specifications);
 
                             if (Array.isArray(parsed)) {
-                                // Якщо раптом в базі старий формат масиву
                                 setSpecs(parsed);
                             } else if (typeof parsed === 'object') {
-                                // 👇 Якщо це ваш правильний формат об'єкта
-                                // Перетворюємо {"Колір":"Чорний"} -> [{key:"Колір", value:"Чорний"}]
                                 const mappedSpecs = Object.entries(parsed).map(([key, value]) => ({
                                     key: key,
                                     value: String(value)
@@ -77,7 +73,6 @@ const ProductFormPage = () => {
                                 setSpecs(mappedSpecs);
                             }
                         } catch (e) {
-                            // Якщо просто текст
                             console.error(e);
                             setSpecs([{ key: "Опис", value: p.specifications }]);
                         }
@@ -94,7 +89,7 @@ const ProductFormPage = () => {
         }
     }, [id, isEditMode]);
 
-    // 2. Шаблони (залишається без змін, воно працює з UI масивом)
+    // 2. Templates
     const loadCategoryTemplates = async (catId: string) => {
         if (!catId) return;
         try {
@@ -122,11 +117,11 @@ const ProductFormPage = () => {
         if (newCatId) loadCategoryTemplates(newCatId);
     };
 
-    // 3. ЗБЕРЕЖЕННЯ (Виправлено формат JSON)
+    // 3. Saving
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // 👇 ВИПРАВЛЕНО: Конвертуємо масив UI у простий об'єкт {"Ключ": "Значення"}
+        // Convert array to object
         const specsObject: Record<string, string> = {};
 
         specs.forEach(item => {
@@ -135,7 +130,6 @@ const ProductFormPage = () => {
             }
         });
 
-        // Тепер це буде {"Колір":"Чорний", "Вага":"1кг"} замість масиву
         const specsJson = JSON.stringify(specsObject);
 
 
@@ -148,11 +142,11 @@ const ProductFormPage = () => {
         formPayload.append('Specifications', specsJson);
 
         images.forEach((img) => {
-            formPayload.append('ImageUrls', img.url); // Якщо у Dto є такий полі - варто узгодити
+            formPayload.append('ImageUrls', img.url);
         });
 
         imageFiles.forEach((file) => {
-            formPayload.append('Images', file); // Тут найважливіша зміна
+            formPayload.append('Images', file);
         });
 
         try {
@@ -169,7 +163,6 @@ const ProductFormPage = () => {
 
             let errorMessage = "Помилка збереження!";
             if (error.response?.data?.errors) {
-                // ASP.NET Core ValidationProblemDetails
                 const validationErrors = Object.entries(error.response.data.errors)
                     .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(', ')}`)
                     .join('\n');
@@ -250,7 +243,7 @@ const ProductFormPage = () => {
         }
     };
 
-    // --- СОРТУВАННЯ НОВИХ ЗОБРАЖЕНЬ ---
+    // New images drag and drop
     const handleDragStartNew = (index: number) => {
         setDragItemIndex(index);
     };
@@ -277,7 +270,7 @@ const ProductFormPage = () => {
         setDragItemIndex(null);
     };
 
-    // --- СОРТУВАННЯ ІСНУЮЧИХ ЗОБРАЖЕНЬ ---
+    // Existing images drag and drop
     const handleDragStartExisting = (index: number) => {
         setDragExistingIndex(index);
     };
@@ -303,7 +296,6 @@ const ProductFormPage = () => {
 
         setIsSavingOrder(true);
         try {
-            // Масив виключно з ID картинок у їхньому новому порядку
             const orderedIds = images.map(img => img.id).filter(id => id !== undefined);
 
             await api.put('/api/products/images/reorder', orderedIds);
@@ -345,7 +337,7 @@ const ProductFormPage = () => {
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-                {/* ЛІВА КОЛОНКА */}
+                {/* LEFT COLUMN */}
                 <div className="space-y-6 bg-white p-6 rounded-lg shadow">
                     <h2 className="text-lg font-semibold border-b pb-2">Основна інформація</h2>
                     <div>
@@ -378,9 +370,9 @@ const ProductFormPage = () => {
                     </div>
                 </div>
 
-                {/* ПРАВА КОЛОНКА */}
+                {/* RIGHT COLUMN */}
                 <div className="space-y-6">
-                    {/* Характеристики */}
+                    {/* Properties */}
                     <div className="bg-white p-6 rounded-lg shadow">
                         <div className="flex justify-between items-center border-b pb-2 mb-4">
                             <h2 className="text-lg font-semibold">Характеристики</h2>
@@ -397,7 +389,7 @@ const ProductFormPage = () => {
                         </div>
                     </div>
 
-                    {/* Фото */}
+                    {/* Images */}
                     <div className="bg-white p-6 rounded-lg shadow">
                         <div className="flex justify-between items-center border-b pb-2 mb-4">
                             <h2 className="text-lg font-semibold">Зображення</h2>

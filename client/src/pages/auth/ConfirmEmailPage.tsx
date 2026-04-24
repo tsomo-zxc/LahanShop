@@ -17,7 +17,7 @@ const ConfirmEmailPage = () => {
 
     useEffect(() => {
         const confirmEmail = async () => {
-            // Перевіряємо наявність параметрів
+            // Check for the presence of parameters
             if (!userId || !token) {
                 setStatus('error');
                 setErrorMessage('Некоректне або відсутнє посилання для підтвердження.');
@@ -37,7 +37,7 @@ const ConfirmEmailPage = () => {
             }
         };
 
-        // Захист від подвійного виклику в React 18 Strict Mode
+        // Protection against double call
         if (!hasRequested.current) {
             hasRequested.current = true;
             confirmEmail();
@@ -53,6 +53,7 @@ const ConfirmEmailPage = () => {
                 robots="noindex, nofollow"
             />
             <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md text-center">
+                {/* Loading state */}
                 {status === 'loading' && (
                     <div className="flex flex-col items-center justify-center py-8">
                         <FaSpinner className="animate-spin text-5xl text-blue-600 mb-6" />
@@ -64,7 +65,7 @@ const ConfirmEmailPage = () => {
                         </p>
                     </div>
                 )}
-
+                {/* Success state */}
                 {status === 'success' && (
                     <div className="flex flex-col items-center justify-center py-8">
                         <div className="bg-green-100 p-4 rounded-full mb-6">
@@ -84,7 +85,7 @@ const ConfirmEmailPage = () => {
                         </Link>
                     </div>
                 )}
-
+                {/* Error state */}
                 {status === 'error' && (
                     <div className="flex flex-col items-center justify-center py-8">
                         <div className="bg-red-100 p-4 rounded-full mb-6">

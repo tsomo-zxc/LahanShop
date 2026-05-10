@@ -363,6 +363,5 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # Secret configuration files
-.env.production
 appsettings.json
 appsettings.Development.json

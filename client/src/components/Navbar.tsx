@@ -107,10 +107,10 @@ const Navbar = () => {
         <Link to="/" className="flex-shrink-0 flex items-center order-1" title='Логотип' onClick={closeMenu}>
           <div className="flex flex-col">
             <span className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight uppercase leading-none">
-              Lahan
+              Авторозбірка
             </span>
             <span className="text-xl sm:text-2xl font-extrabold text-blue-600 tracking-tight uppercase leading-none">
-              Shop
+              Стадники
             </span>
           </div>
         </Link>

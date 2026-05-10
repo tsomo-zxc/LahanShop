@@ -8,8 +8,8 @@ if (!rootElement) {
 }
 
 const root = ReactDOM.createRoot(rootElement);
-root.render(  
-    <HelmetProvider>
-    <App />  
-    </HelmetProvider>
+root.render(
+  <HelmetProvider>
+    <App />
+  </HelmetProvider>
 );
